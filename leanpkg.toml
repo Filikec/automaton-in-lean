@@ -1,0 +1,8 @@
+[package]
+name = "automaton-in-lean"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.45.0"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "461afdac8519d17e7eb59493ebd15d54000829a2"}
