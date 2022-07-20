@@ -1,3 +1,5 @@
+import tactic.finish
+open classical
 section basics
 variable Sigma : Type
 
@@ -65,78 +67,130 @@ def dfa2nfa(A : dfa Sigma) : nfa Sigma :=
    δ := λ q0 x q1 , q1 = A.δ q0 x
   }
 
+lemma nfaδ2dfaδ : ∀ A : dfa Sigma, ∀ w : word Sigma,
+  ∀ q0 q1 : A.Q, dfa_δ_star A q0 w = q1 ↔ nfa_δ_star (dfa2nfa A) q0 w q1 :=
+begin
+  assume A w,
+  induction w,
+  {
+    assume q0 q1,
+    constructor,
+    dsimp [dfa_δ_star, nfa_δ_star],
+    assume h,
+    exact h,
+    dsimp [dfa_δ_star, nfa_δ_star],
+    assume h,
+    exact h,
+  },
+  {
+    assume q0 q1,
+    constructor,
+    {
+      assume h,
+      dsimp [nfa_δ_star],
+      existsi A.δ q0 w_hd,
+      constructor,
+      dsimp [dfa2nfa],
+      reflexivity,
+      apply (iff.mp (w_ih (A.δ q0 w_hd) q1)),
+      exact h,
+    },
+    {
+      dsimp [dfa_δ_star, nfa_δ_star],
+      assume g,
+      apply (iff.mpr (w_ih (A.δ q0 w_hd) q1)),
+      cases g with q00 gg,
+      have eq: A.δ q0 w_hd = q00,
+      dsimp [dfa2nfa] at gg,
+      exact (eq.symm (and.elim_left gg)),
+      rewrite eq,
+      exact (and.elim_right gg),
+    }
+  }
+end
+
+lemma emb11 : ∀ A : dfa Sigma, ∀ w : word Sigma, 
+    dfa_lang A w → nfa_lang (dfa2nfa A) w :=
+begin
+  assume A w,
+  dsimp [dfa_lang, nfa_lang],
+  induction w,
+  {
+    dsimp [dfa_δ_star],
+    assume h,
+    existsi A.init,
+    existsi A.init,
+    constructor,
+    dsimp [dfa2nfa],
+    reflexivity,
+    constructor,
+    dsimp [nfa_δ_star],
+    reflexivity,
+    dsimp [dfa2nfa],
+    exact h,
+  },
+  {
+    assume h,
+    existsi A.init,
+    existsi (dfa_δ_star A A.init (w_hd :: w_tl)),
+    constructor,
+    dsimp [dfa2nfa],
+    reflexivity,
+    constructor,
+    dsimp [nfa_δ_star],
+    existsi A.δ A.init w_hd,
+    constructor,
+    dsimp [dfa2nfa],
+    reflexivity,
+    dsimp [dfa_δ_star],
+    apply iff.mp (nfaδ2dfaδ A w_tl (A.δ A.init w_hd) (dfa_δ_star A (A.δ A.init w_hd) w_tl)),
+    reflexivity,
+    dsimp [dfa2nfa],
+    exact h,
+  }
+end
+
+lemma emb12 : ∀ A : dfa Sigma, ∀ w : word Sigma, 
+    nfa_lang (dfa2nfa A) w → dfa_lang A w :=
+begin
+  assume A w,
+  dsimp [nfa_lang, dfa_lang],
+  assume h,
+  induction w,
+  {
+    dsimp [dfa_δ_star] at *,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    dsimp [nfa_δ_star, dfa2nfa] at h3,
+    rewrite← (and.elim_left h3),
+    rewrite (and.elim_left (and.elim_right h3)),
+    exact (and.elim_right (and.elim_right h3)),
+  },
+  {
+    dsimp [dfa_δ_star] at *,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    have eq: q0 = A.init,
+    dsimp [dfa2nfa] at h3,
+    exact and.elim_left h3,
+    have g: dfa_δ_star A (A.δ A.init w_hd) w_tl = q1,
+    rewrite← eq,
+    change dfa_δ_star A q0 (w_hd :: w_tl) = q1,
+    apply (iff.mpr (nfaδ2dfaδ A (w_hd :: w_tl) q0 q1)),    
+    exact and.elim_left (and.elim_right h3),
+    rewrite g,
+    exact and.elim_right (and.elim_right h3),
+  }
+end
+
+
 lemma emb1 : ∀ A : dfa Sigma, ∀ w : word Sigma, 
     dfa_lang A w ↔ nfa_lang (dfa2nfa A) w :=
 begin
   assume A w,
-  dsimp [dfa_lang,nfa_lang],
-  induction w,
-  {
-    -- nil case
-    dsimp [dfa_δ_star],
-    constructor,
-    {
-      -- dfa to nfa 
-      assume h,
-      existsi A.init,
-      existsi A.init,
-      constructor,
-      dsimp [dfa2nfa],
-      reflexivity,
-      dsimp [nfa_δ_star],
-      constructor,
-      reflexivity,
-      dsimp [dfa2nfa],
-      exact h,
-    },
-    {
-      -- nfa to dfa
-      dsimp [dfa2nfa,nfa_δ_star],
-      assume h,
-      cases h with q0 h_h,
-      cases h_h with q1 h_h_h,
-      cases h_h_h with initq0 eq,
-      cases eq with q0q1 finalq1,
-      rewrite<- initq0,
-      rewrite q0q1,
-      exact finalq1,
-    },
-  },
-  {
-    -- cons case
-    dsimp [dfa_δ_star,nfa_δ_star],
-    cases w_ih with d2n_ih n2d_ih,
-    constructor,
-    {
-      -- dfa to nfa
-      assume h,
-      existsi A.init,
-      existsi (dfa_δ_star A A.init w_tl),
-      constructor,
-      dsimp [dfa2nfa],
-      reflexivity,
-      constructor,
-      existsi (A.δ A.init w_hd),
-      constructor,
-      dsimp [dfa2nfa],
-      reflexivity,      
-      sorry,
-      dsimp [dfa2nfa],
-      --
-      sorry,
-    },
-    {
-      -- nfa to dfa
-      assume h,
-      cases h with nfainit h2,
-      cases h2 with q1 h3,
-      cases h3 with h_nfainit h4,
-      cases h4 with h5 h_q1final,
-      cases h5 with q2 h6,
-      cases h6 with init2q2 q22q1,
-      sorry,
-    }
-  }
+  constructor,
+  exact (emb11 A w),
+  exact (emb12 A w),
 end
 
 end dfa2nfa
