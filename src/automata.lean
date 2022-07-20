@@ -1,5 +1,3 @@
-import tactic.finish
-open classical
 section basics
 variable Sigma : Type
 
