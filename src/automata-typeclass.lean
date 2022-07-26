@@ -1,3 +1,5 @@
+import data.fintype.basic
+
 section basics
 variable Sigma : Type
 
@@ -13,9 +15,11 @@ variable {Sigma : Type}
 
 structure dfa(Sigma : Type)  : Type 1 :=
   (Q : Type)
-  [fintype Q][decidble_eq Q]
+  [finQ : fintype Q]
+  [decQ : decidable_eq Q]
   (init : Q)
-  (final : Q → bool)
+  (final : Q → Prop)
+  [decF : decidable_pred final] 
   (δ : Q → Sigma → Q)
 
 open dfa
@@ -35,11 +39,15 @@ variables {Sigma : Type}
 
 structure nfa(Sigma : Type) : Type 1 := 
   (Q : Type)
-  [fintype Q]
-  (inits : Q → bool)
-  (final : Q → bool)
-  (δ : Q → Sigma → Q → bool)
-/­
+  [finQ : fintype Q]
+  [decQ : decidable_eq Q]
+  (inits : Q → Prop)
+  [decI : decidable_pred inits]
+  (final : Q → Prop)
+  [decF : decidable_pred final]
+  (δ : Q → Sigma → Q → Prop)
+  [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
+/-
   (δ : Q × Sigma × Q → Prop)
   [decidable_pred δ]
 -/
@@ -69,9 +77,14 @@ variables {Sigma : Type}
 def dfa2nfa(A : dfa Sigma) : nfa Sigma :=
   {
     Q := A.Q,
-    inits := λ q , q = A.init,
+    finQ := A.finQ,
+    decQ := A.decQ,
+    inits := λ q : A.Q, q = A.init,
+    decI := λ q, A.decQ q A.init,
     final := A.final,
-    δ := λ q0 x q1 , q1 = A.δ q0 x
+    decF := A.decF,
+    δ := λ q0 x q1 , q1 = A.δ q0 x,
+    decD := λ q , A.decQ q.snd (A.δ q.fst.fst q.fst.snd),
   }
 
 lemma nfaδ2dfaδ : ∀ A : dfa Sigma, ∀ w : word Sigma,
@@ -205,23 +218,18 @@ end dfa2nfa
 section nfa2dfa
 variables {Sigma : Type}
 
+structure decPow(A : Type 1) : Type 2 :=
+  (pred : A → Prop)
+  [decP : decidable_pred pred]
+
 def nfa2dfa(A : nfa Sigma) : dfa Sigma :=
   {
-    Q := A.Q → bool,
+    Q := decPow A,
+    finQ := A.finQ,
     init := A.inits,
     final := λ p , ∃ q : A.Q, p q ∧ A.final q,
     δ := λ p x q1 , ∃ q0 : A.Q, p q0 ∧ A.δ q0 x q1, 
   }
-
-/-
-exists_fin : (A : Type)[fintype A] → (A → bool) → bool
-istrue (exists_fin A P) <-> ∃ a : A , isTrue (P a)
-isTrue(P & Q) ↔ (isTrue P) ∧ (isTrue Q)
-eqb : A → A → bool 
-istrue (eqb a b) ↔ a = b 
--- is this cosnequence of fintype?
--/
-
 
 lemma dfaδ2nfaδ : ∀ A : nfa Sigma, ∀ w : word Sigma, 
   ∀ q1 : A.Q, ∀ p : (nfa2dfa A).Q,
