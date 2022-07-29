@@ -460,7 +460,31 @@ def anbn : lang Sigma_ab :=
 def Regular : lang Sigma → Prop :=
 λ P , exists A : dfa Sigma, P = dfa_lang A
 
+def Regular_nfa : lang Sigma → Prop :=
+λ P , exists A : nfa Sigma, P = nfa_lang A
+
+def Regular_re : lang Sigma → Prop :=
+λ P , exists A : RE Sigma, P = re_lang A
+
+theorem regular_thm : ∀ P : lang Sigma, 
+  (Regular P →  Regular_nfa P) ∧ 
+  (Regular_nfa P → Regular_re P) ∧
+  (Regular_re P → Regular P) := sorry
+
 theorem nreg_anbn : ¬ (Regular anbn) := sorry 
+
+def asbs : lang Sigma_ab :=
+  λ w, ∃ m n : ℕ, w = rep m (a :: []) ++ rep n (b :: [])
+
+theorem reg_asbs : Regular asbs := sorry
+
+def asbs_2 : lang Sigma_ab :=
+  λ w, ∃ m n : ℕ, w = rep m (a :: []) ++ rep n (b :: []) 
+        ∧ m % 2 == n % 2
+
+theorem reg_asbs_2 : Regular asbs_2 := sorry
+
+
 
 end pumping
 
