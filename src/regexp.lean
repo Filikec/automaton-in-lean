@@ -1,11 +1,14 @@
 import data.fintype.basic
 import tactic.derive_fintype
+import data.list 
 
 section basics
 variable Sigma : Type
 
+@[reducible]
 def word : Type := list Sigma
 
+@[reducible]
 def lang : Type := word Sigma → Prop
 
 end basics 
@@ -375,3 +378,89 @@ begin
 end
 
 end nfa2dfa
+
+section re 
+
+variable {Sigma : Type}
+
+inductive RE (Sigma : Type*)
+| empty : RE 
+| lit : Sigma → RE 
+| union : RE → RE → RE 
+| epsilon : RE 
+| star : RE → RE 
+| append : RE → RE → RE 
+
+open RE
+
+def union_lang (P Q : lang Sigma) : lang Sigma 
+:= λ w , P w ∨ Q w 
+
+inductive star_lang (P : lang Sigma) : lang Sigma 
+| empty_star : star_lang []
+| extend : ∀ u w, P u → star_lang w 
+    → star_lang (u ++ w) 
+
+def append_lang (P Q : lang Sigma) : lang Sigma 
+:= λ w, ∃ u v : word Sigma, P u ∧ Q v ∧ w = u ++ v    
+
+def re_lang : RE Sigma → lang Sigma
+| empty := λ w , false
+| (lit x) := λ w, w = x :: []
+--| (union r s) := (re_lang r) ∪ (re_lang s)
+| (union r s) := union_lang (re_lang r) (re_lang s)
+| epsilon := λ w, w = []
+| (star r) := star_lang (re_lang r) 
+| (append r s) := append_lang (re_lang r) (re_lang s)
+
+def re2nfa : RE Sigma → nfa Sigma
+:= sorry
+
+theorem re2nfa_lang : ∀ r : RE Sigma, 
+  re_lang r = nfa_lang (re2nfa r)
+:= sorry
+
+-- not as important
+
+def dfa2re : dfa Sigma → RE Sigma 
+:= sorry
+
+def dfa2re_lang : ∀ A : dfa Sigma, 
+  dfa_lang A = re_lang (dfa2re A) 
+:= sorry 
+
+end re 
+
+section pumping
+open list
+open nat
+
+variable {Sigma : Type}
+
+def rep : ℕ → word Sigma → word Sigma 
+| 0 w := []
+| (succ n) w := w ++ (rep n w)
+
+theorem pumping_lem : ∀ A : dfa Sigma, ∃ n : ℕ ,
+  ∀ s : word Sigma, dfa_lang A s → length s > n → 
+  ∀ u v w : word Sigma, s = u ++ v ++ w ∧ length v > 0
+  → ∀ i : ℕ, dfa_lang A (u ++ (rep i v) ++ w) := sorry
+
+-- example : show that a^nb^n is not regular
+
+inductive Sigma_ab : Type 
+| a : Sigma_ab 
+| b : Sigma_ab 
+
+open Sigma_ab 
+
+def anbn : lang Sigma_ab :=
+  λ w, ∃ n : ℕ, w = rep n (a :: []) ++ rep n (b :: [])
+
+def Regular : lang Sigma → Prop :=
+λ P , exists A : dfa Sigma, P = dfa_lang A
+
+theorem nreg_anbn : ¬ (Regular anbn) := sorry 
+
+end pumping
+
