@@ -13,8 +13,8 @@ end basics
 section dfa
 variable {Sigma : Type}
 
-structure dfa(Sigma : Type)  : Type 1 :=
-  (Q : Type)
+structure dfa(Sigma : Type*) :=
+  (Q : Type*)
   [finQ : fintype Q]
   [decQ : decidable_eq Q]
   (init : Q)
@@ -37,8 +37,8 @@ end dfa
 section nfa
 variables {Sigma : Type}
 
-structure nfa(Sigma : Type) : Type 1 := 
-  (Q : Type)
+structure nfa(Sigma : Type*) := 
+  (Q : Type*)
   [finQ : fintype Q]
   [decQ : decidable_eq Q]
   (inits : Q → Prop)
@@ -218,22 +218,76 @@ end dfa2nfa
 section nfa2dfa
 variables {Sigma : Type}
 
-structure decPow(A : Type 1) : Type 2 :=
+/-
+structure dfa(Sigma : Type)  : Type 1 :=
+  (Q : Type)
+  [finQ : fintype Q]
+  [decQ : decidable_eq Q]
+  (init : Q)
+  (final : Q → Prop)
+  [decF : decidable_pred final] 
+  (δ : Q → Sigma → Q)
+
+structure nfa(Sigma : Type) : Type 1 := 
+  (Q : Type)
+  [finQ : fintype Q]
+  [decQ : decidable_eq Q]
+  (inits : Q → Prop)
+  [decI : decidable_pred inits]
+  (final : Q → Prop)
+  [decF : decidable_pred final]
+  (δ : Q → Sigma → Q → Prop)
+  [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
+
+structure decPow(A : Type) : Type :=
   (pred : A → Prop)
   [decP : decidable_pred pred]
+-/
 
-def nfa2dfa(A : nfa Sigma) : dfa Sigma :=
+@[reducible]
+def decPow (A : Type*) := Σ (p : A → Prop), decidable_pred p
+
+-- https://leanprover.zulipchat.com/#narrow/stream/113488-general/topic/fintype.20for.20functions/near/291226330
+def equiv.sigma_decidable_pred {α : Type*} : (Σ (p : α → Prop), decidable_pred p) ≃ (α → bool) :=
   {
-    Q := decPow A,
-    finQ := A.finQ,
-    init := A.inits,
-    final := λ p , ∃ q : A.Q, p q ∧ A.final q,
-    δ := λ p x q1 , ∃ q0 : A.Q, p q0 ∧ A.δ q0 x q1, 
+    to_fun := λ A i, @to_bool (A.1 i) (A.2 i),
+    inv_fun := λ p, ⟨λ a, p a, by apply_instance⟩,
+    left_inv := λ p, sigma.ext (by simp) $ subsingleton.helim (by simp) _ _,
+    right_inv := λ p, funext $ λ i, bool.to_bool_coe _
+  }
+
+instance finpow {A : Type*} (fin : fintype A) (dec : decidable_eq A) : fintype (decPow A) :=
+fintype.of_equiv (A → bool) $ equiv.symm equiv.sigma_decidable_pred
+
+instance decpow {A : Type*} (fin : fintype A) (dec : decidable_eq A) : decidable_eq (decPow A) :=
+sorry
+
+def nfa2dfa (A : nfa Sigma) : dfa Sigma :=
+  {
+    Q := decPow A.Q,
+    finQ := finpow A.finQ A.decQ,
+    decQ := decpow A.finQ A.decQ,
+    init := sigma.mk (A.inits) A.decI,
+    final := λ p, ∃ q, p.1 q ∧ A.final q,
+    decF := λ p, sorry,
+    δ := λ p x, ⟨(λ q1, ∃ q0 : A.Q, p.1 q0 ∧ A.δ q0 x q1), 
+                  λ q1, begin
+                    simp,
+                    dsimp at *,
+                    cases p,
+                    simp at *,
+                    fconstructor,
+                    assume h,
+                    cases h with q hh,
+                    cases (p_snd q) with a b,
+                    sorry,
+                    sorry,
+                  end, ⟩,
   }
 
 lemma dfaδ2nfaδ : ∀ A : nfa Sigma, ∀ w : word Sigma, 
   ∀ q1 : A.Q, ∀ p : (nfa2dfa A).Q,
-  (∃ q0 : A.Q, p q0 ∧ nfa_δ_star A q0 w q1) ↔ dfa_δ_star (nfa2dfa A) p w q1
+  (∃ q0 : A.Q, p.1 q0 ∧ nfa_δ_star A q0 w q1) ↔ (dfa_δ_star (nfa2dfa A) p w).1 q1
   :=
 begin
   assume A w,
@@ -262,7 +316,7 @@ begin
       assume h,
       cases h with q0 h2,
       cases (and.elim_right h2) with q2 h3,
-      have g: ((nfa2dfa A).δ p w_hd) q2,
+      have g: ((nfa2dfa A).δ p w_hd).1 q2,
       {
         dsimp [nfa2dfa],
         existsi q0,
@@ -309,7 +363,7 @@ begin
     assume h,
     cases h with q0 h2,
     cases h2 with q1 h3,
-    have g: dfa_δ_star (nfa2dfa A) ((nfa2dfa A).δ (nfa2dfa A).init w_hd) w_tl q1,
+    have g: (dfa_δ_star (nfa2dfa A) ((nfa2dfa A).δ (nfa2dfa A).init w_hd) w_tl).1 q1,
     {
       apply iff.mp (dfaδ2nfaδ A w_tl q1 ((nfa2dfa A).δ (nfa2dfa A).init w_hd)),
       cases (and.elim_left (and.elim_right h3)) with q2 h4,
@@ -343,7 +397,7 @@ begin
   {
     assume h,
     cases h with q1 h2,
-    have g: ∃ q0 : A.Q, (nfa2dfa A).init q0 ∧ nfa_δ_star A q0 (w_hd :: w_tl) q1,
+    have g: ∃ q0 : A.Q, (nfa2dfa A).init.1 q0 ∧ nfa_δ_star A q0 (w_hd :: w_tl) q1,
     {
       apply iff.mpr (dfaδ2nfaδ A (w_hd :: w_tl) q1 (nfa2dfa A).init),
       exact (and.elim_left h2),
