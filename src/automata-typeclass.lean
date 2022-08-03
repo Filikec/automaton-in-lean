@@ -260,7 +260,7 @@ instance finpow {A : Type*} (fin : fintype A) (dec : decidable_eq A) : fintype (
 fintype.of_equiv (A → bool) $ equiv.symm equiv.sigma_decidable_pred
 
 instance decpow {A : Type*} (fin : fintype A) (dec : decidable_eq A) : decidable_eq (decPow A) :=
-sorry
+equiv.decidable_eq equiv.sigma_decidable_pred
 
 def nfa2dfa (A : nfa Sigma) : dfa Sigma :=
   {
