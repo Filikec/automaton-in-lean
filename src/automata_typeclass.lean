@@ -4,8 +4,10 @@ import tactic.derive_fintype
 section basics
 variable Sigma : Type
 
+@[reducible]
 def word : Type := list Sigma
 
+@[reducible]
 def lang : Type := word Sigma → Prop
 
 end basics 
@@ -48,19 +50,8 @@ structure nfa(Sigma : Type*) :=
   [decF : decidable_pred final]
   (δ : Q → Sigma → Q → Prop)
   [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
-/-
-  (δ : Q × Sigma × Q → Prop)
-  [decidable_pred δ]
--/
 
 open nfa
-
-/--/
-inductive nfa_δ_star (A : nfa Sigma) : A.Q → word Sigma → A.Q → Prop 
-| empty : ∀ q : A.Q , nfa_δ_star q [] q
-| step : ∀ q0 q1 q2 : A.Q, ∀ x : Sigma, ∀ w : word Sigma, 
-            A.δ q0 x q1 → nfa_δ_star q1 w q2 → nfa_δ_star q1 (x :: w) q2 
--/
 
 def nfa_δ_star : Π A : nfa Sigma , A.Q → word Sigma → A.Q → Prop 
 | A q0 [] q1 := q0 = q1
@@ -68,6 +59,49 @@ def nfa_δ_star : Π A : nfa Sigma , A.Q → word Sigma → A.Q → Prop
 
 def nfa_lang (A : nfa Sigma) : lang Sigma
 := λ w , ∃ q0 q1 : A.Q, A.inits q0 ∧ nfa_δ_star A q0 w q1 ∧ A.final q1
+
+def empty_nfa {Sigma : Type*} : nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , false,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def epsilon_nfa {Sigma : Type*} : nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , true,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def single_nfa {Sigma : Type*} [decidable_eq Sigma] (lit : Sigma) : nfa Sigma :=
+  {
+    Q := fin 2,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ x , x.val = 0,
+    decI := by apply_instance,
+    final := λ x , x.val = 1,
+    decF := by apply_instance,
+    δ := λ q0 x q1 , q0.val = 0 ∧ x = lit ∧ q1.val = 1,
+    decD := begin
+      assume x,
+      dsimp [sigma.uncurry],
+      apply_instance,
+    end
+  }
 
 end nfa
 
@@ -218,32 +252,6 @@ end dfa2nfa
 
 section nfa2dfa
 variables {Sigma : Type}
-
-/-
-structure dfa(Sigma : Type)  : Type 1 :=
-  (Q : Type)
-  [finQ : fintype Q]
-  [decQ : decidable_eq Q]
-  (init : Q)
-  (final : Q → Prop)
-  [decF : decidable_pred final] 
-  (δ : Q → Sigma → Q)
-
-structure nfa(Sigma : Type) : Type 1 := 
-  (Q : Type)
-  [finQ : fintype Q]
-  [decQ : decidable_eq Q]
-  (inits : Q → Prop)
-  [decI : decidable_pred inits]
-  (final : Q → Prop)
-  [decF : decidable_pred final]
-  (δ : Q → Sigma → Q → Prop)
-  [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
-
-structure decPow(A : Type) : Type :=
-  (pred : A → Prop)
-  [decP : decidable_pred pred]
--/
 
 @[reducible]
 def decPow (A : Type*) := Σ (p : A → Prop), decidable_pred p
