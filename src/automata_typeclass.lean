@@ -122,13 +122,22 @@ structure ε_nfa(Sigma : Type) :=
 
 open ε_nfa
 
-inductive ε_closure{A : ε_nfa Sigma} : A.Q → A.Q → Prop
-| base : ∀ q : A.Q, ε_closure q q
-| step : ∀ q0 q1 q2 : A.Q, ε_closure q0 q1 → A.δ q1 none q2 → ε_closure q0 q2
+inductive ε_closure{A : ε_nfa Sigma} : (A.Q → Prop) → A.Q → Prop
+| base : ∀ x : A.Q → Prop, ∀ q : A.Q, x q → ε_closure x q
+| step : ∀ x : A.Q → Prop, ∀ q q' : A.Q, ε_closure x q → A.δ q none q' → ε_closure x q'
 
+/-
 def ε_nfa_δ_star : Π A : ε_nfa Sigma , A.Q → word Sigma → A.Q → Prop 
-| A q0 [] q1 := ε_closure q1 q0
-| A q0 (x :: w) q1 := ∃ q2 : A.Q, (A.δ q0 (some x) q2 ∨ ε_closure q0 q2) ∧ ε_nfa_δ_star A q2 w q1
+| A q0 [] q1 := ε_closure (λ q, q = q0) q1
+| A q0 (x :: w) q1 := ∃ q2 : A.Q, (A.δ q0 (some x) q2 ∨ A.δ q0 none q2) ∧  ε_nfa_δ_star A q2 w q1
+-/
+
+inductive ε_nfa_δ_star (A : ε_nfa Sigma) : A.Q → word Sigma → A.Q → Prop 
+| empty : ∀ q : A.Q , ε_nfa_δ_star q [] q
+| step : ∀ q0 q1 q2 : A.Q, ∀ x : Sigma, ∀ w : word Sigma,
+            A.δ q0 (some x) q1 → ε_nfa_δ_star q1 w q2 → ε_nfa_δ_star q0 (x :: w) q2 
+| epsilon : ∀ q0 q1 q2 : A.Q, ∀ w : word Sigma, 
+            A.δ q0 none q1 → ε_nfa_δ_star q1 w q2 → ε_nfa_δ_star q0 w q2 
 
 def ε_nfa_lang (A : ε_nfa Sigma) : lang Sigma
 := λ w , ∃ q0 q1 : A.Q, A.inits q0 ∧ ε_nfa_δ_star A q0 w q1 ∧ A.final q1
@@ -509,6 +518,7 @@ def nfa2ε_nfa(A : nfa Sigma) : ε_nfa Sigma :=
       cases x with x empty,
       {
         dsimp[option.cases_on'],
+        letI g:= A.decQ,
         apply_instance,
       },
       {
@@ -520,23 +530,58 @@ def nfa2ε_nfa(A : nfa Sigma) : ε_nfa Sigma :=
 
 lemma nfaδ2ε_nfaδ : ∀ A : nfa Sigma, ∀ w : word Sigma, 
   ∀ q0 q1 : A.Q,
-  (nfa_δ_star A q0 w q1) ↔ (ε_nfa_δ_star (nfa2ε_nfa A) q0 w) q1
+  (nfa_δ_star A q0 w q1) ↔ ε_nfa_δ_star (nfa2ε_nfa A) q0 w q1
   :=
 begin
   assume A w,
   induction w,
   {
     assume q0 q1,
-    dsimp [nfa_δ_star, ε_nfa_δ_star],
+    dsimp [nfa_δ_star],
     constructor,
     assume eq,
     rewrite eq,
-    exact ε_closure.base q1,
+    fconstructor,
     assume h,
-    sorry,
+    cases h,
+    {
+      refl,
+    },
+    {
+      dsimp [nfa2ε_nfa] at *,
+      cases h_ᾰ,
+    },
   },
   {
-    sorry,
+    assume q0 q1,
+    dsimp [nfa_δ_star],
+    constructor,
+    {
+      assume h,
+      cases h with q2 h2,
+      dsimp [nfa2ε_nfa],
+      cases h2,
+      fconstructor,
+      exact q2,
+      exact h2_left,
+      apply iff.mp (w_ih q2 q1),
+      exact h2_right,
+    },
+    {
+      assume h,
+      cases h,
+      {
+        existsi h_q1,
+        constructor,
+        exact h_ᾰ,
+        apply iff.mpr (w_ih h_q1 q1),
+        exact h_ᾰ_1,
+      },
+      {
+        dsimp [nfa2ε_nfa] at h_ᾰ,
+        cases h_ᾰ,
+      },
+    },
   }
 end
 
@@ -544,28 +589,39 @@ lemma emb3 : ∀ A : nfa Sigma, ∀ w : word Sigma,
   nfa_lang A w ↔ ε_nfa_lang (nfa2ε_nfa A) w :=
 begin
   assume A w,
+  dsimp [nfa_lang, ε_nfa_lang],
   constructor,
-  {
-    dsimp [nfa_lang, ε_nfa_lang],
+  { 
     assume h,
     cases h with q0 h2,
     cases h2 with q1 h3,
     existsi q0,
     existsi q1,
-    dsimp [nfa2ε_nfa],
     constructor,
     exact (and.elim_left h3),
     constructor,
     {
       cases h3,
-      sorry,
+      apply iff.mp (nfaδ2ε_nfaδ A w q0 q1),
+      exact and.elim_left h3_right,
     },
     exact (and.elim_right (and.elim_right h3)),
   },
   {
-    sorry,
+    assume h,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    cases h3 with h4 h5,
+    cases h5 with h6 h7,
+    existsi q0,
+    existsi q1,
+    constructor,
+    exact h4,
+    constructor,
+    apply iff.mpr (nfaδ2ε_nfaδ A w q0 q1),
+    exact h6,
+    exact h7,
   }
 end
-
 
 end nfa2ε_nfa
