@@ -142,6 +142,49 @@ inductive ε_nfa_δ_star (A : ε_nfa Sigma) : A.Q → word Sigma → A.Q → Pro
 def ε_nfa_lang (A : ε_nfa Sigma) : lang Sigma
 := λ w , ∃ q0 q1 : A.Q, A.inits q0 ∧ ε_nfa_δ_star A q0 w q1 ∧ A.final q1
 
+def empty_ε_nfa {Sigma : Type*} : ε_nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , false,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def epsilon_ε_nfa {Sigma : Type*} : ε_nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , true,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def single_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (lit : Sigma) : ε_nfa Sigma :=
+  {
+    Q := fin 2,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ x , x.val = 0,
+    decI := by apply_instance,
+    final := λ x , x.val = 1,
+    decF := by apply_instance,
+    δ := λ q0 x q1 , q0.val = 0 ∧ x = lit ∧ q1.val = 1,
+    decD := begin
+      assume x,
+      dsimp [sigma.uncurry],
+      apply_instance,
+    end
+  }
+
 end ε_nfa
 
 
