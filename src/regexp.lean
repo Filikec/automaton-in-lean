@@ -31,9 +31,9 @@ def append_lang (P Q : lang Sigma) : lang Sigma
 
 def re_lang : RE Sigma → lang Sigma
 | empty := λ w , false
+| epsilon := λ w, w = []
 | (lit x) := λ w, w = x :: []
 | (union r s) := union_lang (re_lang r) (re_lang s)
-| epsilon := λ w, w = []
 | (star r) := star_lang (re_lang r) 
 | (append r s) := append_lang (re_lang r) (re_lang s)
 
@@ -189,9 +189,114 @@ def re2ε_nfa : RE Sigma → ε_nfa Sigma
     end,
   }
 
-theorem re2nfa_lang : ∀ r : RE Sigma, 
-  re_lang r = ε_nfa_lang (re2ε_nfa r)
-:= sorry
+theorem re2nfa_lang : ∀ r : RE Sigma, ∀ w : word Sigma,
+  re_lang r w ↔ ε_nfa_lang (re2ε_nfa r) w :=
+begin
+  assume r,
+  cases r,
+  {
+    -- empty
+    assume w,
+    dsimp [re2ε_nfa],
+    dsimp [re_lang, ε_nfa_lang],
+    constructor,
+    assume f, cases f,
+    assume h,
+    cases h with q0 h1,
+    cases h1 with q1 h2,
+    cases h2 with h3 h4,
+    cases h4 with h5 h6,
+    cases h6,
+  },
+  {
+    -- lit r
+    assume w,
+    dsimp [re2ε_nfa],
+    dsimp [re_lang, ε_nfa_lang],
+    have zlto : ∃ z o : fin 2, z < o ∧ z.val = 0 ∧ o.val = 1,
+      exact dec_trivial,
+    constructor,
+    assume h,
+    cases zlto with z h,
+    cases h with o p,
+    existsi z,
+    existsi o,
+    constructor,
+    cases z,
+    cases o,
+    simp at p,
+    exact and.elim_left (and.elim_right p),
+    constructor,
+    dsimp [single_ε_nfa],
+    fconstructor,
+    exact z,
+    finish,
+    rw h,
+    fconstructor,
+    exact o,
+    finish,
+    fconstructor,
+    exact and.elim_right (and.elim_right p),
+    assume h,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    cases h3 with h4 h5,
+    cases h5 with h6 h7,
+    sorry,
+  },
+  {
+    -- union
+    assume w,
+    
+    sorry,
+  },
+  {
+    -- epsilon
+    assume w,
+    dsimp [re2ε_nfa],
+    dsimp [re_lang, ε_nfa_lang],
+    constructor,
+    assume h,
+    rw h,
+    have z : fin 1,
+      exact 0,
+    existsi z,
+    existsi z,
+    constructor,
+    constructor,
+    constructor,
+    constructor,
+    constructor,
+    assume h,
+    cases h with q0 h1,
+    cases h1 with q1 h2,
+    cases h2 with h3 h4,
+    cases h4 with h5 h6,
+    let h7 : ∀ q : epsilon_ε_nfa.Q, q = q1,
+    {
+      assume q,
+      cases q,
+      cases q1,
+      simp at q_property,
+      simp at q1_property,
+      simp,
+      rw q_property,
+      rw q1_property,
+    },
+    cases h5,
+    refl,
+    solve_by_elim,
+    solve_by_elim,
+  },
+  {
+    -- star
+    sorry,
+  },
+  {
+    -- append
+    sorry,
+  }
+end
 
 -- not as important
 
@@ -208,7 +313,7 @@ section pumping
 open list
 open nat
 
-variable {Sigma : Type}
+variables {Sigma : Type} [decidable_eq Sigma]
 
 def rep : ℕ → word Sigma → word Sigma 
 | 0 w := []

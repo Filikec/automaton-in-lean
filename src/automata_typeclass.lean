@@ -177,7 +177,7 @@ def single_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (lit : Sigma) : ε_nfa Si
     decI := by apply_instance,
     final := λ x , x.val = 1,
     decF := by apply_instance,
-    δ := λ q0 x q1 , q0.val = 0 ∧ x = lit ∧ q1.val = 1,
+    δ := λ q0 x q1 , (q0.val = 0 ∧ x = lit ∧ q1.val = 1) ∨ (q0 = q1 ∧ x = none),
     decD := begin
       assume x,
       dsimp [sigma.uncurry],
