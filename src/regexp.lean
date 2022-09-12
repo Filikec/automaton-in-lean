@@ -241,14 +241,41 @@ begin
     cases h with q0 h2,
     cases h2 with q1 h3,
     cases h3 with h4 h5,
-    cases h5 with h6 h7,
+    cases h5 with h6 h7,    
+    cases h6,
+    have different_inits_final : ∀ q : (single_ε_nfa r).Q,
+      (single_ε_nfa r).inits q ∧ (single_ε_nfa r).final q → false,
+      {
+        assume q,
+        assume h,
+        cases h with i f,
+        have q_zero : q.val = 0,
+          exact i,
+        have q_one : q.val = 1,
+          exact f,
+        finish,
+      },
+    cases (different_inits_final q0 (and.intro h4 h7)),
+    sorry,
+    cases h6_ᾰ,
+    finish,
     sorry,
   },
   {
     -- union
     assume w,
-    
-    sorry,
+    induction w,
+    {
+      constructor,
+      dsimp [re_lang, ε_nfa_lang],
+      assume h,
+      dsimp [union_lang] at h,
+      
+      sorry,sorry,
+    },
+    {
+      sorry,
+    }
   },
   {
     -- epsilon
@@ -290,11 +317,37 @@ begin
   },
   {
     -- star
+    assume w,
+    induction w,
+    constructor;
+    {
+      dsimp [re_lang, ε_nfa_lang],
+      assume h,
+      sorry,
+    },
     sorry,
   },
   {
     -- append
-    sorry,
+    assume w,
+    dsimp [re_lang, ε_nfa_lang],
+    constructor,
+    {
+      assume h,
+      dsimp [append_lang] at h,
+      cases h with u h1, cases h1 with v h2,
+      dsimp [re2ε_nfa],
+      cases h2 with h3 h4,
+      cases h4 with h5 h6,
+      sorry,
+    },
+    {
+      assume h,
+      cases h with q0 h,
+      cases h with q1 h,
+      dsimp [append_lang],
+      sorry,
+    }
   }
 end
 
@@ -319,10 +372,14 @@ def rep : ℕ → word Sigma → word Sigma
 | 0 w := []
 | (succ n) w := w ++ (rep n w)
 
-theorem pumping_lem : ∀ A : dfa Sigma, ∃ n : ℕ ,
-  ∀ s : word Sigma, dfa_lang A s → length s > n → 
-  ∀ u v w : word Sigma, s = u ++ v ++ w ∧ length v > 0
-  → ∀ i : ℕ, dfa_lang A (u ++ (rep i v) ++ w) := sorry
+theorem pumping_lem : ∀ A : dfa Sigma,
+  ∀ s : word Sigma, dfa_lang A s → ∃ p : ℕ, length s >= p → 
+  ∀ u v w : word Sigma, s = u ++ v ++ w ∧ length v > 0 ∧ length u + length v <= p
+  → ∀ i : ℕ, dfa_lang A (u ++ (rep i v) ++ w) :=
+begin
+  assume A s h_reg,
+  sorry,
+end
 
 -- example : show that a^nb^n is not regular
 
