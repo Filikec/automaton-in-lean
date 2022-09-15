@@ -185,6 +185,180 @@ def single_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (lit : Sigma) : ε_nfa Si
     end
   }
 
+def union_ε_nfa {Sigma : Type*} (A : ε_nfa Sigma) (B : ε_nfa Sigma) : ε_nfa Sigma :=
+  {
+    Q := A.Q ⊕ B.Q,
+    finQ := @sum.fintype A.Q B.Q A.finQ B.finQ,
+    decQ := @sum.decidable_eq A.Q A.decQ B.Q B.decQ,
+    inits := λ q, sum.cases_on q A.inits B.inits,
+    decI := begin 
+      assume a,
+      letI dr := A.decI, letI ds := B.decI,
+      cases a;
+      tauto,
+    end,
+    final := λ q, sum.cases_on q A.final B.final,
+    decF := begin
+      assume a,
+      letI dr := A.decF, letI ds := B.decF,
+      cases a;
+      tauto,
+    end,
+    δ := λ a, sum.cases_on a
+      (λ a x b, sum.cases_on b (λ b, A.δ a x b) (λ _, false))
+      (λ a x b, sum.cases_on b (λ _, false) (λ b, B.δ a x b)),
+    decD := begin
+      assume a,
+      simp at *,
+      dsimp [sigma.uncurry],
+      cases a with ax b,
+      cases ax with a x,
+      cases a, 
+      {
+        cases b,
+        simp at *,
+        exact A.decD ⟨⟨a, x⟩, b⟩,
+        simp at *,
+        exact is_false id,
+      },
+      {
+        cases b,
+        simp at *,
+        exact is_false id,
+        simp at *,
+        exact B.decD ⟨⟨a, x⟩, b⟩,
+      }
+    end,
+  }
+
+def star_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) : ε_nfa Sigma :=
+  {
+    Q := A.Q,
+    finQ := A.finQ,
+    decQ := A.decQ,
+    inits := A.inits,
+    decI := A.decI,
+    final := λ q, A.final q ∨ A.inits q,
+    decF := begin 
+      letI dI := A.decI,
+      letI dF := A.decF,
+      apply_instance,
+    end,
+    δ := λ a x b, A.δ a x b ∨ (A.final a ∧ A.inits b ∧ x = none),
+    decD := begin
+      assume x,
+      dsimp [sigma.uncurry],
+      cases A.decD ⟨⟨x.fst.fst, x.fst.snd⟩, x.snd⟩ with n y,
+      cases A.decF x.fst.fst with nn yy,
+      letI not : ¬(A.δ x.fst.fst x.fst.snd x.snd ∨ A.final x.fst.fst ∧ A.inits x.snd ∧ x.fst.snd = none),
+        assume h,
+        cases h with l r,
+        dsimp [sigma.uncurry] at n,
+        exact n l,
+        apply nn,
+        exact and.elim_left r,
+      exact is_false not,
+      cases A.decI x.snd with nnn yyy,
+      letI not : ¬(A.δ x.fst.fst x.fst.snd x.snd ∨ A.final x.fst.fst ∧ A.inits x.snd ∧ x.fst.snd = none),
+        assume h,
+        cases h with l r,
+        dsimp [sigma.uncurry] at n,
+        exact n l,
+        apply nnn,
+        exact and.elim_left (and.elim_right r),
+      exact is_false not,
+      letI test: decidable_pred (λ x : option Sigma, x = none),
+        apply_instance,
+      cases test x.fst.snd,
+      letI not : ¬(A.δ x.fst.fst x.fst.snd x.snd ∨ A.final x.fst.fst ∧ A.inits x.snd ∧ x.fst.snd = none),
+        assume h,
+        cases h with l r,
+        dsimp [sigma.uncurry] at n,
+        exact n l,
+        apply h,
+        exact and.elim_right (and.elim_right r),
+      exact is_false not,
+      letI yes : A.δ x.fst.fst x.fst.snd x.snd ∨ A.final x.fst.fst ∧ A.inits x.snd ∧ x.fst.snd = none,
+        right,
+        exact ⟨yy, ⟨yyy, h⟩⟩,
+      exact is_true yes,
+      letI yes : A.δ x.fst.fst x.fst.snd x.snd ∨ A.final x.fst.fst ∧ A.inits x.snd ∧ x.fst.snd = none,
+        left,
+        dsimp [sigma.uncurry] at y,
+        exact y,
+      exact is_true yes,
+    end
+  }
+
+def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : ε_nfa Sigma) : ε_nfa Sigma :=
+  {
+    Q := A.Q ⊕ B.Q,
+    finQ := @sum.fintype A.Q B.Q A.finQ B.finQ,
+    decQ := @sum.decidable_eq A.Q A.decQ B.Q B.decQ,
+    inits := λ q, sum.cases_on q A.inits (λ _, false),
+    decI := begin
+      assume a,
+      cases a;
+      simp at *,
+      exact A.decI a,
+      exact is_false id,
+    end,
+    final := λ q, sum.cases_on q (λ _, false) B.final,
+    decF := begin
+      assume a,
+      cases a;
+      simp at *,
+      exact is_false id,
+      exact B.decF a,
+    end,
+    δ := λ a, sum.cases_on a 
+      (λ a x b, sum.cases_on b (λ b, A.δ a x b) (λ b, A.final a ∧ B.inits b ∧ x = none))
+      (λ a x b, sum.cases_on b (λ _, false) (λ b, B.δ a x b)),
+    decD := begin
+      assume a,
+      cases a with ax b, cases ax with a x,
+      cases a; cases b; dsimp [sigma.uncurry],
+      exact A.decD ⟨⟨a, x⟩, b⟩,
+      {
+        letI dF := A.decF,
+        letI dI := B.decI,
+        letI deq := @sum.decidable_eq A.Q A.decQ B.Q B.decQ,
+        apply_instance,
+      },
+      exact is_false id,
+      exact B.decD ⟨⟨a, x⟩, b⟩,
+    end,
+  }
+
+theorem inversion : ∀ A : ε_nfa Sigma, ∀ q q' : A.Q, ∀ w : word Sigma,
+        ε_nfa_δ_star A q w q' →
+        (w = [] ∧ q' = q)
+        ∨ (∃ x : Sigma, ∃ w' : word Sigma, ∃ q'' : A.Q , w = x :: w' ∧ A.δ q (some x) q'' ∧ ε_nfa_δ_star A q'' w' q')
+        ∨ (∃ q'' : A.Q , A.δ q none q'' ∧ ε_nfa_δ_star A q'' w q') :=
+begin
+  assume A q q' w,
+  assume h,
+  cases h,
+  left,
+  constructor,
+  refl,
+  refl,
+  right, left,
+  existsi h_x,
+  existsi h_w,
+  existsi h_q1,
+  constructor,
+  refl,
+  constructor,
+  exact h_ᾰ,
+  exact h_ᾰ_1,
+  right, right,
+  existsi h_q1,
+  constructor,
+  exact h_ᾰ,
+  exact h_ᾰ_1,
+end
+
 end ε_nfa
 
 
