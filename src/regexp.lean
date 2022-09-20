@@ -212,9 +212,12 @@ def union_ε_nfa {Sigma : Type*} (A : ε_nfa Sigma) (B : ε_nfa Sigma) : ε_nfa 
       cases a;
       tauto,
     end,
-    δ := λ a, sum.cases_on a
-      (λ a x b, sum.cases_on b (λ b, A.δ a x b) (λ _, false))
-      (λ a x b, sum.cases_on b (λ _, false) (λ b, B.δ a x b)),
+    δ := λ a x b, match a, b with
+      | (sum.inl a), (sum.inl b) := A.δ a x b
+      | (sum.inl a), (sum.inr b) := false
+      | (sum.inr a), (sum.inl b) := false
+      | (sum.inr a), (sum.inr b) := B.δ a x b
+      end,
     decD := begin
       assume a,
       simp at *,
@@ -271,10 +274,56 @@ lemma left_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : A.Q,
 begin
   assume A B w q0 q1,
   constructor,
-  assume h,
-  dsimp [union_ε_nfa] at h,
-  sorry, 
-  sorry,
+  {
+    assume h,
+    cases h,
+    {
+      fconstructor, 
+    },
+    {
+      cases h_q1,
+      {
+        fconstructor,
+        exact h_q1,
+        exact h_ᾰ,
+        sorry,
+      },
+      {
+        cases h_ᾰ,
+      }
+    },
+    {
+      cases h_q1,
+      {
+        fconstructor,
+        exact h_q1,
+        exact h_ᾰ,
+        sorry,
+      },
+      {
+        cases h_ᾰ,
+      }
+    }
+  },
+  {
+    assume h,
+    induction h,
+    {
+      fconstructor,
+    },
+    {
+      fconstructor,
+      exact (sum.inl h_q1),
+      exact h_ᾰ,
+      exact h_ih,
+    },
+    {
+      fconstructor,
+      exact (sum.inl h_q1),
+      exact h_ᾰ,
+      exact h_ih,
+    }
+  },
 end
 
 lemma right_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : B.Q,
@@ -437,9 +486,12 @@ def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : �
       exact is_false id,
       exact B.decF a,
     end,
-    δ := λ a, sum.cases_on a 
-      (λ a x b, sum.cases_on b (λ b, A.δ a x b) (λ b, A.final a ∧ B.inits b ∧ x = none))
-      (λ a x b, sum.cases_on b (λ _, false) (λ b, B.δ a x b)),
+    δ := λ a x b, match a, b with
+        | (sum.inl a), (sum.inl b) := A.δ a x b
+        | (sum.inl a), (sum.inr b) := A.final a ∧ B.inits b ∧ x = none
+        | (sum.inr a), (sum.inl b) := false
+        | (sum.inr a), (sum.inr b) := B.δ a x b
+      end,
     decD := begin
       assume a,
       cases a with ax b, cases ax with a x,
@@ -455,6 +507,83 @@ def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : �
       exact B.decD ⟨⟨a, x⟩, b⟩,
     end,
   }
+
+lemma append_lemma : ∀ A : ε_nfa Sigma, ∀ u v : word Sigma, ∀ q0 q1 q2 q3 : A.Q, 
+  ε_nfa_δ_star A q0 u q2 ∧ ε_nfa_δ_star A q3 v q1 ∧ A.δ q2 none q3 →
+  ε_nfa_δ_star A q0 (u ++ v) q1 :=
+begin
+  sorry,
+end
+
+lemma append_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ε_nfa_lang (append_ε_nfa A B) w ↔ append_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
+begin
+  assume A B w,
+  constructor,
+  {
+    dsimp [ε_nfa_lang, append_lang],
+    assume h,
+    cases h with q0 h, cases h with q1 h,
+    --dsimp [append_ε_nfa] at h,
+    cases h with h1 h, cases h with h2 h3,
+    cases q0,
+    {
+      cases q1,
+      {
+        cases h3,
+      },
+      {
+        have delimiter : ∃ q2 : A.Q, ∃ q3 : B.Q, ∃ u v : word Sigma,
+          ε_nfa_δ_star A q0 u q2
+          ∧ ε_nfa_δ_star B q3 v q1
+          ∧ (append_ε_nfa A B).δ (sum.inl q2) none (sum.inr q3)
+          ∧ w = u ++ v,
+        sorry,
+        cases delimiter with q2 h4, cases h4 with q3 h4,
+        cases h4 with u h4, cases h4 with v h4,
+        cases h4 with h4 h5, cases h5 with h5 h6, cases h6 with h6 h7,
+        existsi u, existsi v,
+        constructor,
+        {
+          existsi q0, existsi q2,
+          constructor, exact h1,
+          constructor, exact h4,
+          exact (and.elim_left h6),
+        },
+        {
+          constructor,
+          {
+            existsi q3, existsi q1,
+            constructor,
+            exact (and.elim_left (and.elim_right h6)),
+            constructor, exact h5, exact h3,
+          },
+          exact h7,
+        }
+      }
+    },
+    {
+      cases h1,
+    }
+  },
+  {
+    dsimp [ε_nfa_lang, append_lang],
+    assume h,
+    cases h with u h, cases h with v h,
+    cases h with h1 h2, cases h2 with h2 h3,
+    cases h1 with q0 h1, cases h1 with q2 h1,
+    cases h2 with q3 h2, cases h2 with q1 h2,
+    existsi (sum.inl q0), existsi (sum.inr q1),
+    constructor, exact (and.elim_left h1),
+    constructor, 
+    {
+      rw h3,
+      apply append_lemma (append_ε_nfa A B) u v (sum.inl q0) (sum.inr q1) (sum.inl q2) (sum.inr q3),
+      sorry,
+    },
+    exact (and.elim_right (and.elim_right h2)),
+
+  }
+end
 
 def re2ε_nfa : RE Sigma → ε_nfa Sigma
 | empty := empty_ε_nfa
