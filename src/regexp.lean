@@ -270,15 +270,19 @@ begin
 end
 
 lemma left_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : A.Q,
-   ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0) w (sum.inl q1) ↔ ε_nfa_δ_star A q0 w q1 :=
+  ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0) w (sum.inl q1) ↔ ε_nfa_δ_star A q0 w q1 :=
+  --  ε_nfa_δ_star (union_ε_nfa A B) q0 w q1 ↔ ε_nfa_δ_star A q0 w q1 :=
 begin
   assume A B w q0 q1,
   constructor,
   {
     assume h,
-    cases h,
+    --generalize_hyp e1 : q0 = q0' at h,
+    --generalize_hyp e2 : q1 = q1' at h,
+    induction h,
     {
-      fconstructor, 
+      
+      fconstructor,
     },
     {
       cases h_q1,
@@ -293,11 +297,11 @@ begin
       }
     },
     {
-      cases h_q1,
+      cases q1_1,
       {
         fconstructor,
-        exact h_q1,
-        exact h_ᾰ,
+        exact q1_1,
+        exact ᾰ,
         sorry,
       },
       {

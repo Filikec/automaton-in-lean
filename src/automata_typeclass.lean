@@ -529,7 +529,7 @@ end nfa2dfa
 
 section nfa2ε_nfa
 
-variable {Sigma : Type}
+variables {Sigma : Type} [decidable_eq Sigma]
 
 def nfa2ε_nfa(A : nfa Sigma) : ε_nfa Sigma :=
   {
