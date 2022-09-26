@@ -269,6 +269,37 @@ begin
   simp,
 end
 
+lemma union_lem : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : (union_ε_nfa A B).Q,
+  ε_nfa_δ_star (union_ε_nfa A B) q0 w q1 ↔ 
+    (∃ q0' q1' : A.Q, q0 = sum.inl q0' ∧ q1 = sum.inl q1' ∧ ε_nfa_δ_star A q0' w q1')
+    ∨
+    (∃ q0' q1' : B.Q, q0 = sum.inr q0' ∧ q1 = sum.inr q1' ∧ ε_nfa_δ_star B q0' w q1')
+    :=
+begin
+  assume A B w q0 q1,
+  constructor,
+    assume h,
+    induction h,
+    case ε_nfa_δ_star.empty : q 
+      {cases q,
+        left,
+        existsi [q,q],
+        constructor,
+          refl,
+          constructor,
+          refl,
+          constructor,
+        },
+    --case 
+    --cases h,
+
+
+sorry,
+end
+
+
+
+
 lemma left_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : A.Q,
   ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0) w (sum.inl q1) ↔ ε_nfa_δ_star A q0 w q1 :=
   --  ε_nfa_δ_star (union_ε_nfa A B) q0 w q1 ↔ ε_nfa_δ_star A q0 w q1 :=
