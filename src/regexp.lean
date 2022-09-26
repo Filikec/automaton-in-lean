@@ -269,6 +269,57 @@ begin
   simp,
 end
 
+
+lemma left_union' : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0' q1' : A.Q, 
+  ε_nfa_δ_star A q0' w q1' → ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0') w (sum.inl q1') :=
+begin
+  assume A B w q0' q1' h,
+  induction h,
+  case ε_nfa_δ_star.empty : q 
+  {
+    constructor,
+  },
+  case ε_nfa_δ_star.step : q0 q1 q2 x w h0 h1 ih 
+  {
+    fconstructor,
+    exact (sum.inl q1),
+    exact h0,
+    exact ih,
+  },
+  case ε_nfa_δ_star.epsilon : q0 q1 q2 w h0 h1 ih
+  {
+    fconstructor,
+    exact (sum.inl q1),
+    exact h0,
+    exact ih,
+  }
+end
+
+lemma right_union' : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0' q1' : B.Q, 
+  ε_nfa_δ_star B q0' w q1' → ε_nfa_δ_star (union_ε_nfa A B) (sum.inr q0') w (sum.inr q1') :=
+begin
+  assume A B w q0' q1' h,
+  induction h,
+  case ε_nfa_δ_star.empty : q 
+  {
+    constructor,
+  },
+  case ε_nfa_δ_star.step : q0 q1 q2 x w h0 h1 ih 
+  {
+    fconstructor,
+    exact (sum.inr q1),
+    exact h0,
+    exact ih,
+  },
+  case ε_nfa_δ_star.epsilon : q0 q1 q2 w h0 h1 ih
+  {
+    fconstructor,
+    exact (sum.inr q1),
+    exact h0,
+    exact ih,
+  }
+end
+
 lemma union_lem : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : (union_ε_nfa A B).Q,
   ε_nfa_δ_star (union_ε_nfa A B) q0 w q1 ↔ 
     (∃ q0' q1' : A.Q, q0 = sum.inl q0' ∧ q1 = sum.inl q1' ∧ ε_nfa_δ_star A q0' w q1')
@@ -278,86 +329,203 @@ lemma union_lem : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : (union
 begin
   assume A B w q0 q1,
   constructor,
+  {
     assume h,
     induction h,
     case ε_nfa_δ_star.empty : q 
-      {cases q,
+    {
+      cases q,
+      {  
         left,
-        existsi [q,q],
-        constructor,
-          refl,
+        existsi [q, q],
+        have empty_construct: ε_nfa_δ_star A q list.nil q,
           constructor,
-          refl,
+        exact and.intro (refl $ sum.inl q) (and.intro (refl $ sum.inl q) empty_construct),
+      },
+      {
+        right,
+        existsi [q, q],
+        have empty_construct: ε_nfa_δ_star B q list.nil q,
           constructor,
+        exact and.intro (refl $ sum.inr q) (and.intro (refl $ sum.inr q) empty_construct),
+      }
+    }, 
+    case ε_nfa_δ_star.step : q00 q11 q22 x w h0 h1 ih
+    {
+      cases q00,
+      {
+        cases q11,
+        {
+          left,
+          cases ih,
+          {
+            cases ih with q00' ih, cases ih with q11' ih,
+            existsi [q00, q11'],
+            constructor, refl,
+            constructor, exact (and.elim_left (and.elim_right ih)),
+            fconstructor,
+            exact q11,
+            exact h0,
+            have eq : q11 = q00',
+              injection (and.elim_left ih),
+            rw eq,
+            exact (and.elim_right (and.elim_right ih)),
+          },
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            rw (and.elim_left ih) at h0,
+            cases h0,
+          },
         },
-    --case 
-    --cases h,
-
-
-sorry,
+        {
+          cases h0,
+        }
+      },
+      {
+        cases q11,
+        {
+          cases h0,
+        },
+        {
+          right,
+          cases ih,
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            rw (and.elim_left ih) at h0,
+            cases h0, 
+          },
+          {
+            cases ih with q00' ih, cases ih with q11' ih,
+            existsi [q00, q11'],
+            constructor, refl,
+            constructor, exact (and.elim_left (and.elim_right ih)),
+            fconstructor,
+            exact q11,
+            exact h0,
+            have eq : q11 = q00',
+              injection (and.elim_left ih),
+            rw eq,
+            exact (and.elim_right (and.elim_right ih)),
+          }
+        }
+      }
+    },
+    case ε_nfa_δ_star.epsilon : q00 q11 q22 w h0 h1 ih
+    {
+      cases q00,
+      {
+        cases q11,
+        {
+          left,
+          cases ih,
+          {
+            cases ih with q00' ih, cases ih with q11' ih,
+            existsi [q00, q11'],
+            constructor, refl,
+            constructor, exact (and.elim_left (and.elim_right ih)),
+            fconstructor,
+            exact q11,
+            exact h0,
+            have eq : q11 = q00',
+              injection (and.elim_left ih),
+            rw← eq at ih,
+            exact (and.elim_right (and.elim_right ih)),
+          },
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            rw (and.elim_left ih) at h0,
+            cases h0,
+          }
+        },
+        {
+          cases h0,
+        }
+      },
+      {
+        cases q11,
+        {
+          cases h0,
+        },
+        {
+          right,
+          cases ih,
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            rw (and.elim_left ih) at h0,
+            cases h0,
+          },
+          {
+            cases ih with q00' ih, cases ih with q11' ih,
+            existsi [q00, q11'],
+            constructor, refl,
+            constructor, exact (and.elim_left (and.elim_right ih)),
+            fconstructor,
+            exact q11,
+            exact h0,
+            have eq : q11 = q00',
+              injection (and.elim_left ih),
+            rw← eq at ih,
+            exact (and.elim_right (and.elim_right ih)),
+          }
+        }
+      }
+    },
+  },
+  {
+    assume h,
+    cases h with hA hB,
+    {
+      cases hA with q0' hA, cases hA with q1' hA,
+      cases hA with h0 hA, cases hA with h1 hA,
+      have left_union: ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0') w (sum.inl q1'),
+        apply (left_union' A B w q0' q1' hA),
+      rw← h0 at left_union,
+      rw← h1 at left_union,
+      exact left_union,
+    },
+    {
+      cases hB with q0' hB, cases hB with q1' hB,
+      cases hB with h0 hB, cases hB with h1 hB,
+      have right_union: ε_nfa_δ_star (union_ε_nfa A B) (sum.inr q0') w (sum.inr q1'),
+        apply (right_union' A B w q0' q1' hB),
+      rw← h0 at right_union,
+      rw← h1 at right_union,
+      exact right_union,
+    }
+  }
 end
-
-
-
 
 lemma left_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : A.Q,
   ε_nfa_δ_star (union_ε_nfa A B) (sum.inl q0) w (sum.inl q1) ↔ ε_nfa_δ_star A q0 w q1 :=
-  --  ε_nfa_δ_star (union_ε_nfa A B) q0 w q1 ↔ ε_nfa_δ_star A q0 w q1 :=
 begin
   assume A B w q0 q1,
   constructor,
   {
     assume h,
-    --generalize_hyp e1 : q0 = q0' at h,
-    --generalize_hyp e2 : q1 = q1' at h,
-    induction h,
+    have h1 := iff.mp (union_lem A B w (sum.inl q0) (sum.inl q1)),
+    cases h1 h with h1 h1,
     {
-      
-      fconstructor,
+      cases h1 with q0' h1, cases h1 with q1' h1,
+      cases h1 with h1 h2, cases h2 with h2 h3,
+      injections_and_clear,
+      rw← h_1 at h3,
+      rw← h_2 at h3,
+      exact h3,
     },
     {
-      cases h_q1,
-      {
-        fconstructor,
-        exact h_q1,
-        exact h_ᾰ,
-        sorry,
-      },
-      {
-        cases h_ᾰ,
-      }
-    },
-    {
-      cases q1_1,
-      {
-        fconstructor,
-        exact q1_1,
-        exact ᾰ,
-        sorry,
-      },
-      {
-        cases h_ᾰ,
-      }
+      cases h1 with q0' h1, cases h1 with q1' h1,
+      cases (and.elim_left h1),
     }
   },
   {
     assume h,
-    induction h,
-    {
-      fconstructor,
-    },
-    {
-      fconstructor,
-      exact (sum.inl h_q1),
-      exact h_ᾰ,
-      exact h_ih,
-    },
-    {
-      fconstructor,
-      exact (sum.inl h_q1),
-      exact h_ᾰ,
-      exact h_ih,
-    }
+    have h1 := iff.mpr (union_lem A B w (sum.inl q0) (sum.inl q1)),
+    apply h1,
+    left,
+    existsi [q0, q1],
+    constructor, refl,
+    constructor, refl,
+    exact h,
   },
 end
 
@@ -366,10 +534,33 @@ lemma right_union : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : B.Q,
 begin
   assume A B w q0 q1,
   constructor,
-  assume h,
-  dsimp [union_ε_nfa] at h,
-  sorry, 
-  sorry,
+  {
+    assume h,
+    have h1 := iff.mp (union_lem A B w (sum.inr q0) (sum.inr q1)),
+    cases h1 h with h1 h1,
+    {
+      cases h1 with q0' h1, cases h1 with q1' h1,
+      cases (and.elim_left h1),
+    },
+    {
+      cases h1 with q0' h1, cases h1 with q1' h1,
+      cases h1 with h1 h2, cases h2 with h2 h3,
+      injections_and_clear,
+      rw← h_1 at h3,
+      rw← h_2 at h3,
+      exact h3,
+    },
+  },
+  {
+    assume h,
+    have h1 := iff.mpr (union_lem A B w (sum.inr q0) (sum.inr q1)),
+    apply h1,
+    right,
+    existsi [q0, q1],
+    constructor, refl,
+    constructor, refl,
+    exact h,
+  },
 end
 
 lemma union_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ε_nfa_lang (union_ε_nfa A B) w ↔ union_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
@@ -536,7 +727,8 @@ def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : �
         letI dF := A.decF,
         letI dI := B.decI,
         letI deq := @sum.decidable_eq A.Q A.decQ B.Q B.decQ,
-        apply_instance,
+        --apply_instance,
+        sorry,
       },
       exact is_false id,
       exact B.decD ⟨⟨a, x⟩, b⟩,
