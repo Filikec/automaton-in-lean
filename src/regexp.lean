@@ -563,7 +563,8 @@ begin
   },
 end
 
-lemma union_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ε_nfa_lang (union_ε_nfa A B) w ↔ union_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
+lemma union_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma,
+  ε_nfa_lang (union_ε_nfa A B) w ↔ union_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
 begin
   assume A B w,
   constructor,
@@ -727,8 +728,8 @@ def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : �
         letI dF := A.decF,
         letI dI := B.decI,
         letI deq := @sum.decidable_eq A.Q A.decQ B.Q B.decQ,
-        --apply_instance,
-        sorry,
+        unfold_aux,
+        apply_instance,
       },
       exact is_false id,
       exact B.decD ⟨⟨a, x⟩, b⟩,
@@ -742,7 +743,8 @@ begin
   sorry,
 end
 
-lemma append_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ε_nfa_lang (append_ε_nfa A B) w ↔ append_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
+lemma append_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma,
+  ε_nfa_lang (append_ε_nfa A B) w ↔ append_lang (ε_nfa_lang A) (ε_nfa_lang B) w :=
 begin
   assume A B w,
   constructor,
@@ -750,8 +752,8 @@ begin
     dsimp [ε_nfa_lang, append_lang],
     assume h,
     cases h with q0 h, cases h with q1 h,
-    --dsimp [append_ε_nfa] at h,
     cases h with h1 h, cases h with h2 h3,
+    --dsimp [append_ε_nfa] at h,
     cases q0,
     {
       cases q1,
@@ -764,7 +766,10 @@ begin
           ∧ ε_nfa_δ_star B q3 v q1
           ∧ (append_ε_nfa A B).δ (sum.inl q2) none (sum.inr q3)
           ∧ w = u ++ v,
-        sorry,
+          {
+
+            sorry,
+          },
         cases delimiter with q2 h4, cases h4 with q3 h4,
         cases h4 with u h4, cases h4 with v h4,
         cases h4 with h4 h5, cases h5 with h5 h6, cases h6 with h6 h7,
@@ -799,16 +804,24 @@ begin
     cases h with h1 h2, cases h2 with h2 h3,
     cases h1 with q0 h1, cases h1 with q2 h1,
     cases h2 with q3 h2, cases h2 with q1 h2,
-    existsi (sum.inl q0), existsi (sum.inr q1),
+    existsi [sum.inl q0, sum.inr q1],
     constructor, exact (and.elim_left h1),
     constructor, 
     {
-      rw h3,
-      apply append_lemma (append_ε_nfa A B) u v (sum.inl q0) (sum.inr q1) (sum.inl q2) (sum.inr q3),
-      sorry,
+      let h11 : ε_nfa_δ_star A q0 u q2, exact (and.elim_left $ and.elim_right $ h1),
+      let h22 : ε_nfa_δ_star B q3 v q1, exact (and.elim_left $ and.elim_right $ h2),
+      {
+        rw h3,
+        apply append_lemma (append_ε_nfa A B) u v (sum.inl q0) (sum.inr q1) (sum.inl q2) (sum.inr q3),
+        constructor,
+        sorry,
+        constructor,
+        sorry,
+        constructor, exact (and.elim_right $ and.elim_right h1),
+        constructor, exact (and.elim_left h2), refl,
+      }
     },
     exact (and.elim_right (and.elim_right h2)),
-
   }
 end
 
@@ -824,7 +837,7 @@ theorem re2nfa_lang : ∀ r : RE Sigma, ∀ w : word Sigma,
   re_lang r w ↔ ε_nfa_lang (re2ε_nfa r) w :=
 begin
   assume r,
-  cases r,
+  induction r,
   {
     -- empty
     assume w,
@@ -842,11 +855,25 @@ begin
   {
     -- union
     assume w,
-    dsimp [re_lang],
-    dsimp [re2ε_nfa],
     let g := (iff.symm (union_ε_nfa_lang (re2ε_nfa r_ᾰ) (re2ε_nfa r_ᾰ_1) w)),
-    let h : union_lang (re_lang r_ᾰ) (re_lang r_ᾰ_1) w ↔ union_lang (ε_nfa_lang (re2ε_nfa r_ᾰ)) (ε_nfa_lang (re2ε_nfa r_ᾰ_1)) w,
-      sorry,
+    let h : union_lang (re_lang r_ᾰ) (re_lang r_ᾰ_1) w 
+            ↔ union_lang (ε_nfa_lang (re2ε_nfa r_ᾰ)) (ε_nfa_lang (re2ε_nfa r_ᾰ_1)) w,
+      {
+        dsimp [union_lang],
+        constructor,
+        {
+          assume h,
+          cases h,
+          left, exact iff.mp (r_ih_ᾰ w) h,
+          right, exact iff.mp (r_ih_ᾰ_1 w) h,
+        },
+        {
+          assume h,
+          cases h,
+          left, exact iff.mpr (r_ih_ᾰ w) h,
+          right, exact iff.mpr (r_ih_ᾰ_1 w) h,
+        }
+      },
     exact iff.trans h g,
   },
   {
@@ -871,24 +898,35 @@ begin
   {
     -- append
     assume w,
-    dsimp [re_lang, ε_nfa_lang],
-    constructor,
+    let g := (iff.symm (append_ε_nfa_lang (re2ε_nfa r_ᾰ) (re2ε_nfa r_ᾰ_1) w)),
+    let h : append_lang (re_lang r_ᾰ) (re_lang r_ᾰ_1) w 
+            ↔ append_lang (ε_nfa_lang (re2ε_nfa r_ᾰ)) (ε_nfa_lang (re2ε_nfa r_ᾰ_1)) w,
     {
-      assume h,
-      dsimp [append_lang] at h,
-      cases h with u h1, cases h1 with v h2,
-      dsimp [re2ε_nfa],
-      cases h2 with h3 h4,
-      cases h4 with h5 h6,
-      sorry,
+      constructor,
+      {
+        assume h,
+        cases h with u h, cases h with v h,
+        existsi [u, v],
+        cases h with h1 h, cases h with h2 h3,
+        constructor,
+        exact (r_ih_ᾰ u).mp h1,
+        constructor,
+        exact (r_ih_ᾰ_1 v).mp h2,
+        exact h3,
+      },
+      {
+        assume h,
+        cases h with u h, cases h with v h,
+        existsi [u, v],
+        cases h with h1 h, cases h with h2 h3,
+        constructor,
+        exact (r_ih_ᾰ u).mpr h1,
+        constructor,
+        exact (r_ih_ᾰ_1 v).mpr h2,
+        exact h3,
+      }
     },
-    {
-      assume h,
-      cases h with q0 h,
-      cases h with q1 h,
-      dsimp [append_lang],
-      sorry,
-    }
+    exact iff.trans h g,
   }
 end
 
