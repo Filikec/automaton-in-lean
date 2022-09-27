@@ -767,7 +767,41 @@ begin
           ∧ (append_ε_nfa A B).δ (sum.inl q2) none (sum.inr q3)
           ∧ w = u ++ v,
           {
-
+            induction h2,
+            case ε_nfa_δ_star.empty : q
+            {
+              existsi [q0, q1, [], []],
+              constructor, fconstructor,
+              constructor, fconstructor,
+              constructor, fconstructor, cases q, cases h3, cases h1,
+              constructor, cases q, cases h3, cases h1,
+              refl,
+              simp,
+            },
+            case ε_nfa_δ_star.step : q00 q11 q22 x w' h00 h11 ih
+            {
+              cases q00,
+              {
+                cases q11,
+                {
+                  sorry,
+                },
+                {
+                  cases h00 with _ h00,
+                  cases h00 with _ f,
+                  cases f,
+                }
+              },
+              {
+                cases q11,
+                {
+                  cases h00, 
+                },
+                {
+                  sorry,
+                }
+              }
+            },
             sorry,
           },
         cases delimiter with q2 h4, cases h4 with q3 h4,
