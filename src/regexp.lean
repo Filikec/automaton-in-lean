@@ -786,46 +786,46 @@ begin
   }
 end
 
-lemma append_lemᵣ : ∀ A B : ε_nfa Sigma, ∀ u v : word Sigma, ∀ q0 q1 : (append_ε_nfa A B).Q, 
-  (∃ q0' : A.Q, ∃ q1' : B.Q, q0 = sum.inl q0' ∧ q1 = sum.inr q1' 
-   ∧ ∃ w : word Sigma, ∃ q2' : A.Q, ∃ q3' : B.Q, A.final q2' ∧ B.inits q3'
-   ∧ ε_nfa_δ_star A q0' u q2' ∧ ε_nfa_δ_star B q3' v q1'
-   ∧ u ++ v = w) →
-  ε_nfa_δ_star (append_ε_nfa A B) q0 (u ++ v) q1 :=
+lemma append_lemᵣ : ∀ A B : ε_nfa Sigma, ∀ u v : word Sigma, ∀ q0 : A.Q, ∀ q1 : B.Q, 
+  (∃ q2 : A.Q, ∃ q3 : B.Q, A.final q2 ∧ B.inits q3
+   ∧ ε_nfa_δ_star A q0 u q2 ∧ ε_nfa_δ_star B q3 v q1) →
+  ε_nfa_δ_star (append_ε_nfa A B) (sum.inl q0) (u ++ v) (sum.inr q1) :=
 begin
   assume A B u v q0 q1 h,
-  cases h with q0' h, cases h with q1' h,
-  cases h with eq1 h, cases h with eq2 h,
-  cases h with w h, cases h with q2' h,
-  cases h with q3' h, cases h with Afinal h,
-  cases h with Binits h, cases h with Astar h,
-  cases h with Bstar split_eq,
-  have a2b : (append_ε_nfa A B).δ (sum.inl q2') none (sum.inr q3'),
+  cases h with q2 h, cases h with q3 h,
+  cases h with Afinal h, cases h with Binits h,
+  cases h with Astar Bstar,
+  have a2b : (append_ε_nfa A B).δ (sum.inl q2) none (sum.inr q3),
   {
     constructor, exact Afinal,
     constructor, exact Binits,
     refl,
   },
-  induction Astar,
+  induction Astar, 
   case ε_nfa_δ_star.empty : q
   {
-    simp at *,
-    fconstructor,
-    exact (sum.inr q3'),
-    rw eq1, exact a2b, rw eq2,
-    exact right_append A B v q3' q1' Bstar,
+    simp,fconstructor,
+    exact (sum.inr q3),
+    exact a2b, exact right_append A B v q3 q1 Bstar,
   },
-  case ε_nfa_δ_star.step : q00 q11 q22 x' w' h1 h2 ih
+  case ε_nfa_δ_star.step : q00 q11 q22 x w h1 h2 ih
   {
     fconstructor,
-    exact (sum.inl q11),
-    rw eq1, exact h1,
-    sorry,
+    exact sum.inl q11,
+    exact h1,
+    apply ih,
+    exact Afinal,
+    exact a2b,
   },
-  case ε_nfa_δ_star.epsilon : q00 q11 q22 w' h1 h2 ih
+  case ε_nfa_δ_star.epsilon : q00 q11 q22 w h1 h2 ih
   {
-    sorry,
-  },
+    fconstructor,
+    exact sum.inl q11,
+    exact h1,
+    apply ih,
+    exact Afinal,
+    exact a2b,
+  }
 end
 
 lemma append_lem : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : (append_ε_nfa A B).Q,
@@ -1117,14 +1117,12 @@ begin
       let h11 : ε_nfa_δ_star A q0 u q2, exact (and.elim_left $ and.elim_right $ h1),
       let h22 : ε_nfa_δ_star B q3 v q1, exact (and.elim_left $ and.elim_right $ h2),
       rw h3,
-      apply append_lemᵣ A B u v (sum.inl q0) (sum.inr q1),
-      existsi [q0, q1], simp,
-      existsi [(u ++ v), q2],
+      apply append_lemᵣ A B u v q0 q1,
+      existsi [q2, q3],
       constructor, exact (and.elim_right $ and.elim_right $ h1),
-      existsi [q3], constructor,
-      exact (and.elim_left h2),
+      constructor, exact (and.elim_left h2),
       constructor, exact h11,
-      constructor, exact h22, refl,
+      exact h22,
     },
     exact (and.elim_right (and.elim_right h2)),
   }
