@@ -736,11 +736,324 @@ def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : �
     end,
   }
 
-lemma append_lemma : ∀ A : ε_nfa Sigma, ∀ u v : word Sigma, ∀ q0 q1 q2 q3 : A.Q, 
-  ε_nfa_δ_star A q0 u q2 ∧ ε_nfa_δ_star A q3 v q1 ∧ A.δ q2 none q3 →
-  ε_nfa_δ_star A q0 (u ++ v) q1 :=
+lemma left_append : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : A.Q,
+  ε_nfa_δ_star A q0 w q1 → ε_nfa_δ_star (append_ε_nfa A B) (sum.inl q0) w (sum.inl q1) :=
 begin
-  sorry,
+  assume A B w q0 q1 h,
+  induction h,
+  case ε_nfa_δ_star.empty : q
+  {
+    constructor,
+  },
+  case ε_nfa_δ_star.step : q11 q22 q33 x w h1 h2 ih
+  {
+    fconstructor,
+    exact (sum.inl q22),
+    exact h1,
+    exact ih,
+  },
+  case ε_nfa_δ_star.epsilon : q11 q22 q33 w h1 h2 ih
+  {
+    fconstructor,
+    exact (sum.inl q22),
+    exact h1,
+    exact ih,
+  }
+end
+
+lemma right_append : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : B.Q,
+  ε_nfa_δ_star B q0 w q1 → ε_nfa_δ_star (append_ε_nfa A B) (sum.inr q0) w (sum.inr q1) :=
+begin
+  assume A B w q0 q1 h,
+  induction h,
+  case ε_nfa_δ_star.empty : q
+  {
+    constructor,
+  },
+  case ε_nfa_δ_star.step : q11 q22 q33 x w h1 h2 ih
+  {
+    fconstructor,
+    exact (sum.inr q22),
+    exact h1,
+    exact ih,
+  },
+  case ε_nfa_δ_star.epsilon : q11 q22 q33 w h1 h2 ih
+  {
+    fconstructor,
+    exact (sum.inr q22),
+    exact h1,
+    exact ih,
+  }
+end
+
+lemma append_lemᵣ : ∀ A B : ε_nfa Sigma, ∀ u v : word Sigma, ∀ q0 q1 : (append_ε_nfa A B).Q, 
+  (∃ q0' : A.Q, ∃ q1' : B.Q, q0 = sum.inl q0' ∧ q1 = sum.inr q1' 
+   ∧ ∃ w : word Sigma, ∃ q2' : A.Q, ∃ q3' : B.Q, A.final q2' ∧ B.inits q3'
+   ∧ ε_nfa_δ_star A q0' u q2' ∧ ε_nfa_δ_star B q3' v q1'
+   ∧ u ++ v = w) →
+  ε_nfa_δ_star (append_ε_nfa A B) q0 (u ++ v) q1 :=
+begin
+  assume A B u v q0 q1 h,
+  cases h with q0' h, cases h with q1' h,
+  cases h with eq1 h, cases h with eq2 h,
+  cases h with w h, cases h with q2' h,
+  cases h with q3' h, cases h with Afinal h,
+  cases h with Binits h, cases h with Astar h,
+  cases h with Bstar split_eq,
+  have a2b : (append_ε_nfa A B).δ (sum.inl q2') none (sum.inr q3'),
+  {
+    constructor, exact Afinal,
+    constructor, exact Binits,
+    refl,
+  },
+  induction Astar,
+  case ε_nfa_δ_star.empty : q
+  {
+    simp at *,
+    fconstructor,
+    exact (sum.inr q3'),
+    rw eq1, exact a2b, rw eq2,
+    exact right_append A B v q3' q1' Bstar,
+  },
+  case ε_nfa_δ_star.step : q00 q11 q22 x' w' h1 h2 ih
+  {
+    fconstructor,
+    exact (sum.inl q11),
+    rw eq1, exact h1,
+    sorry,
+  },
+  case ε_nfa_δ_star.epsilon : q00 q11 q22 w' h1 h2 ih
+  {
+    sorry,
+  },
+end
+
+lemma append_lem : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma, ∀ q0 q1 : (append_ε_nfa A B).Q,
+  ε_nfa_δ_star (append_ε_nfa A B) q0 w q1 →
+  (∃ q0' : A.Q, ∃ q1' : B.Q, q0 = sum.inl q0' ∧ q1 = sum.inr q1' 
+   ∧ ∃ u v : word Sigma, ∃ q2' : A.Q, ∃ q3' : B.Q, A.final q2' ∧ B.inits q3'
+   ∧ ε_nfa_δ_star A q0' u q2' ∧ ε_nfa_δ_star B q3' v q1'
+   ∧ u ++ v = w)
+  ∨ (∃ q0' q1' : A.Q, q0 = sum.inl q0' ∧ q1 = sum.inl q1'
+     ∧ ε_nfa_δ_star A q0' w q1')
+  ∨ (∃ q0' q1' : B.Q, q0 = sum.inr q0' ∧ q1 = sum.inr q1'
+     ∧ ε_nfa_δ_star B q0' w q1') :=
+begin
+  assume A B w q0 q1 h,
+  induction h,
+  case ε_nfa_δ_star.empty : q
+  {
+    cases q,
+    right, left, existsi [q, q],
+    simp, constructor,
+    right, right, existsi [q, q],
+    simp, constructor,
+  },
+  case ε_nfa_δ_star.step : q00 q11 q22 x w h1 h2 ih
+  {
+    cases q00,
+    {
+      cases q11,
+      {
+        cases ih,
+        {
+          left,
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with eq1 ih, cases ih with eq2 ih,
+          cases ih with u ih, cases ih with v ih,
+          cases ih with q2' ih, cases ih with q3 ih,
+          cases ih with Afinal ih, cases ih with Binits ih,
+          cases ih with Astar ih, cases ih with Bstar split_eq,
+          existsi [q00, q1'], constructor, refl,
+          constructor, exact eq2, 
+          existsi [(x :: u), v],
+          existsi [q2', q3],
+          constructor, exact Afinal,
+          constructor, exact Binits,
+          constructor,
+          {
+            fconstructor,
+            exact q11, exact h1,
+            injection eq1 with eq1, rw eq1,
+            exact Astar,
+          },
+          constructor,
+          {
+            exact Bstar,
+          },
+          {
+            rw← split_eq,
+            exact list.cons_append x u v,
+          }
+        },
+        {
+          cases ih,
+          {
+            right, left,
+            cases ih with q0' ih, cases ih with q1' ih,
+            existsi [q00, q1'],
+            cases ih with eq1 ih, cases ih with eq2 Astar,
+            simp, constructor, exact eq2,
+            fconstructor,
+            exact q11, exact h1,
+            injection eq1 with eq1, rw eq1, exact Astar,
+          },
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with f _, cases f,
+          }
+        }
+      },
+      {
+        cases h1 with _ h1, cases h1 with _ f, cases f,
+      }
+    },
+    {
+      cases q11,
+      {
+        cases h1,
+      },
+      {
+        cases ih,
+        {
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with f _, cases f,
+        },
+        {
+          cases ih,
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with f _, cases f,
+          },
+          {
+            right, right,
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with eq1 ih, cases ih with eq2 Bstar,
+            existsi [q00, q1'],
+            simp, constructor, exact eq2,
+            fconstructor,
+            exact q11,
+            exact h1, injection eq1 with eq1, rw eq1,
+            exact Bstar,
+          }
+        },
+      }
+    },
+  },
+  case ε_nfa_δ_star.epsilon : q00 q11 q22 w h1 h2 ih
+  {
+    cases q00,
+    {
+      cases q11,
+      {
+        cases ih,
+        {
+          left,
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with eq1 ih, cases ih with eq2 ih,
+          cases ih with u ih, cases ih with v ih,
+          cases ih with q2' ih, cases ih with q3 ih,
+          cases ih with Afinal ih, cases ih with Binits ih,
+          cases ih with Astar ih, cases ih with Bstar split_eq,
+          existsi [q00, q1'], constructor, refl,
+          constructor, exact eq2, 
+          existsi [u, v],
+          existsi [q2', q3],
+          constructor, exact Afinal,
+          constructor, exact Binits,
+          constructor,
+          {
+            fconstructor,
+            exact q11, exact h1,
+            injection eq1 with eq1, rw eq1,
+            exact Astar,
+          },
+          constructor,
+          {
+            exact Bstar,
+          },
+          {
+            rw← split_eq,
+          }
+        },
+        {
+          cases ih,
+          {
+            right, left,
+            cases ih with q0' ih, cases ih with q1' ih,
+            existsi [q00, q1'],
+            cases ih with eq1 ih, cases ih with eq2 Astar,
+            simp, constructor, exact eq2,
+            fconstructor,
+            exact q11, exact h1,
+            injection eq1 with eq1, rw eq1, exact Astar,
+          },
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with f _, cases f,
+          }
+        }
+      },
+      {
+        left, 
+        cases ih,
+        {
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with f _, cases f,
+        },
+        cases ih,
+        {
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with f _, cases f,
+        },
+        {
+          cases h1 with Afinal h1, cases h1 with Binits _,
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with eq1 ih, cases ih with eq2 Bstar,
+          existsi [q00, q1'],
+          constructor, refl,
+          constructor, exact eq2,
+          existsi [[], w, q00, q11],
+          constructor, exact Afinal,
+          constructor, exact Binits,
+          constructor, constructor,
+          constructor, injection eq1 with eq1, rw eq1, exact Bstar,
+          exact list.nil_append w,
+        }
+      }
+    },
+    {
+      cases q11,
+      {
+        cases h1,
+      },
+      {
+        cases ih,
+        {
+          cases ih with q0' ih, cases ih with q1' ih,
+          cases ih with f _, cases f,
+        },
+        {
+          cases ih,
+          {
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with f _, cases f,
+          },
+          {
+            right, right,
+            cases ih with q0' ih, cases ih with q1' ih,
+            cases ih with eq1 ih, cases ih with eq2 Bstar,
+            existsi [q00, q1'],
+            simp, constructor, exact eq2,
+            fconstructor,
+            exact q11,
+            exact h1, injection eq1 with eq1, rw eq1,
+            exact Bstar,
+          }
+        },
+      }
+    },
+  },
 end
 
 lemma append_ε_nfa_lang : ∀ A B : ε_nfa Sigma, ∀ w : word Sigma,
@@ -753,82 +1066,41 @@ begin
     assume h,
     cases h with q0 h, cases h with q1 h,
     cases h with h1 h, cases h with h2 h3,
-    --dsimp [append_ε_nfa] at h,
-    cases q0,
+    have g := append_lem A B w q0 q1 h2,
+    cases g,
     {
-      cases q1,
+      cases g with q0' g, cases g with q1' g,
+      cases g with eq1 g, cases g with eq2 g,
+      cases g with u g, cases g with v g,
+      cases g with q2' g, cases g with q3' g,
+      cases g with Afinal g, cases g with Binits ih,
+      cases ih with Astar g, cases g with Bstar split_eq,
+      existsi [u, v],
+      constructor,
       {
-        cases h3,
+        existsi [q0', q2'],
+        constructor, finish,
+        constructor, exact Astar, exact Afinal,
       },
+      constructor,
       {
-        have delimiter : ∃ q2 : A.Q, ∃ q3 : B.Q, ∃ u v : word Sigma,
-          ε_nfa_δ_star A q0 u q2
-          ∧ ε_nfa_δ_star B q3 v q1
-          ∧ (append_ε_nfa A B).δ (sum.inl q2) none (sum.inr q3)
-          ∧ w = u ++ v,
-          {
-            induction h2,
-            case ε_nfa_δ_star.empty : q
-            {
-              existsi [q0, q1, [], []],
-              constructor, fconstructor,
-              constructor, fconstructor,
-              constructor, fconstructor, cases q, cases h3, cases h1,
-              constructor, cases q, cases h3, cases h1,
-              refl,
-              simp,
-            },
-            case ε_nfa_δ_star.step : q00 q11 q22 x w' h00 h11 ih
-            {
-              cases q00,
-              {
-                cases q11,
-                {
-                  sorry,
-                },
-                {
-                  cases h00 with _ h00,
-                  cases h00 with _ f,
-                  cases f,
-                }
-              },
-              {
-                cases q11,
-                {
-                  cases h00, 
-                },
-                {
-                  sorry,
-                }
-              }
-            },
-            sorry,
-          },
-        cases delimiter with q2 h4, cases h4 with q3 h4,
-        cases h4 with u h4, cases h4 with v h4,
-        cases h4 with h4 h5, cases h5 with h5 h6, cases h6 with h6 h7,
-        existsi u, existsi v,
-        constructor,
-        {
-          existsi q0, existsi q2,
-          constructor, exact h1,
-          constructor, exact h4,
-          exact (and.elim_left h6),
-        },
-        {
-          constructor,
-          {
-            existsi q3, existsi q1,
-            constructor,
-            exact (and.elim_left (and.elim_right h6)),
-            constructor, exact h5, exact h3,
-          },
-          exact h7,
-        }
-      }
+        existsi [q3', q1'],
+        constructor, exact Binits,
+        constructor, exact Bstar, finish,
+      },
+      exact eq.symm split_eq,
+    },
+    cases g,
+    {
+      cases g with q0' g, cases g with q1' g,
+      cases g with eq1 g, cases g with eq2 Astar,
+      existsi [w, []],
+      rw eq2 at h3, cases h3,
     },
     {
-      cases h1,
+      cases g with q0' g, cases g with q1' g,
+      cases g with eq1 g, cases g with eq2 Astar,
+      rw eq1 at h1, cases h1,
     }
   },
   {
@@ -844,16 +1116,15 @@ begin
     {
       let h11 : ε_nfa_δ_star A q0 u q2, exact (and.elim_left $ and.elim_right $ h1),
       let h22 : ε_nfa_δ_star B q3 v q1, exact (and.elim_left $ and.elim_right $ h2),
-      {
-        rw h3,
-        apply append_lemma (append_ε_nfa A B) u v (sum.inl q0) (sum.inr q1) (sum.inl q2) (sum.inr q3),
-        constructor,
-        sorry,
-        constructor,
-        sorry,
-        constructor, exact (and.elim_right $ and.elim_right h1),
-        constructor, exact (and.elim_left h2), refl,
-      }
+      rw h3,
+      apply append_lemᵣ A B u v (sum.inl q0) (sum.inr q1),
+      existsi [q0, q1], simp,
+      existsi [(u ++ v), q2],
+      constructor, exact (and.elim_right $ and.elim_right $ h1),
+      existsi [q3], constructor,
+      exact (and.elim_left h2),
+      constructor, exact h11,
+      constructor, exact h22, refl,
     },
     exact (and.elim_right (and.elim_right h2)),
   }
