@@ -692,6 +692,21 @@ def star_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) : ε_nfa
     end
   }
 
+lemma star_ε_nfa_lang : ∀ A : ε_nfa Sigma, ∀ w : word Sigma,
+  ε_nfa_lang (star_ε_nfa A) w ↔ star_lang (ε_nfa_lang A) w :=
+begin
+  assume A w,
+  constructor,
+  {
+    assume h,
+    induction h,
+    sorry,
+  },
+  {
+    sorry,
+  }
+end
+
 def append_ε_nfa {Sigma : Type*} [decidable_eq Sigma] (A : ε_nfa Sigma) (B : ε_nfa Sigma) : ε_nfa Sigma :=
   {
     Q := A.Q ⊕ B.Q,
@@ -1189,14 +1204,40 @@ begin
   {
     -- star
     assume w,
-    induction w,
-    constructor;
-    {
-      dsimp [re_lang, ε_nfa_lang],
-      assume h,
-      sorry,
-    },
-    sorry,
+    let h : star_lang (re_lang r_ᾰ) w ↔ star_lang (ε_nfa_lang (re2ε_nfa r_ᾰ)) w,
+      {
+        constructor,
+        {
+          assume h,
+          induction h,
+          case star_lang.empty_star
+          {
+            constructor,
+          },
+          case star_lang.extend : u' w' pu sw ih
+          {
+            fconstructor,
+            exact (r_ih u').mp pu,
+            exact ih,
+          }
+        },
+        {
+          assume h,
+          induction h,
+          case star_lang.empty_star
+          {
+            constructor,
+          },
+          case star_lang.extend : u' w' pu sw ih
+          {
+            fconstructor,
+            exact (r_ih u').mpr pu,
+            exact ih,
+          }
+        }
+      },
+    let g := (iff.symm (star_ε_nfa_lang (re2ε_nfa r_ᾰ) w)),
+    exact iff.trans h g,
   },
   {
     -- append
