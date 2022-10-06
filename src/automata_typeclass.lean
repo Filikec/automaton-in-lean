@@ -1,10 +1,13 @@
 import data.fintype.basic
+import tactic.derive_fintype
 
 section basics
 variable Sigma : Type
 
+@[reducible]
 def word : Type := list Sigma
 
+@[reducible]
 def lang : Type := word Sigma → Prop
 
 end basics 
@@ -47,19 +50,8 @@ structure nfa(Sigma : Type*) :=
   [decF : decidable_pred final]
   (δ : Q → Sigma → Q → Prop)
   [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
-/-
-  (δ : Q × Sigma × Q → Prop)
-  [decidable_pred δ]
--/
 
 open nfa
-
-/--/
-inductive nfa_δ_star (A : nfa Sigma) : A.Q → word Sigma → A.Q → Prop 
-| empty : ∀ q : A.Q , nfa_δ_star q [] q
-| step : ∀ q0 q1 q2 : A.Q, ∀ x : Sigma, ∀ w : word Sigma, 
-            A.δ q0 x q1 → nfa_δ_star q1 w q2 → nfa_δ_star q1 (x :: w) q2 
--/
 
 def nfa_δ_star : Π A : nfa Sigma , A.Q → word Sigma → A.Q → Prop 
 | A q0 [] q1 := q0 = q1
@@ -68,7 +60,119 @@ def nfa_δ_star : Π A : nfa Sigma , A.Q → word Sigma → A.Q → Prop
 def nfa_lang (A : nfa Sigma) : lang Sigma
 := λ w , ∃ q0 q1 : A.Q, A.inits q0 ∧ nfa_δ_star A q0 w q1 ∧ A.final q1
 
+def empty_nfa {Sigma : Type*} : nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , false,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def epsilon_nfa {Sigma : Type*} : nfa Sigma :=
+  {
+    Q := fin 1,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ _ , true,
+    decI := by apply_instance,
+    final := λ _ , true,
+    decF := by apply_instance,
+    δ := λ _ _ _ , false,
+    decD := λ _, by {dsimp[sigma.uncurry], apply_instance,},
+  }
+
+def single_nfa {Sigma : Type*} [decidable_eq Sigma] (lit : Sigma) : nfa Sigma :=
+  {
+    Q := fin 2,
+    finQ := by apply_instance,
+    decQ := by apply_instance,
+    inits := λ x , x.val = 0,
+    decI := by apply_instance,
+    final := λ x , x.val = 1,
+    decF := by apply_instance,
+    δ := λ q0 x q1 , q0.val = 0 ∧ x = lit ∧ q1.val = 1,
+    decD := begin
+      assume x,
+      dsimp [sigma.uncurry],
+      apply_instance,
+    end
+  }
+
 end nfa
+
+
+section ε_nfa
+variables {Sigma : Type} [decidable_eq Sigma]
+
+structure ε_nfa(Sigma : Type) :=
+  (Q : Type*)
+  [finQ : fintype Q]
+  [decQ : decidable_eq Q]
+  (inits : Q → Prop)
+  [decI : decidable_pred inits]
+  (final : Q → Prop)
+  [decF : decidable_pred final]
+  (δ : Q → option Sigma → Q → Prop)
+  [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
+
+open ε_nfa
+
+inductive ε_closure{A : ε_nfa Sigma} : (A.Q → Prop) → A.Q → Prop
+| base : ∀ x : A.Q → Prop, ∀ q : A.Q, x q → ε_closure x q
+| step : ∀ x : A.Q → Prop, ∀ q q' : A.Q, ε_closure x q → A.δ q none q' → ε_closure x q'
+
+/-
+def ε_nfa_δ_star : Π A : ε_nfa Sigma , A.Q → word Sigma → A.Q → Prop 
+| A q0 [] q1 := ε_closure (λ q, q = q0) q1
+| A q0 (x :: w) q1 := ∃ q2 : A.Q, (A.δ q0 (some x) q2 ∨ A.δ q0 none q2) ∧  ε_nfa_δ_star A q2 w q1
+-/
+
+inductive ε_nfa_δ_star (A : ε_nfa Sigma) : A.Q → word Sigma → A.Q → Prop 
+| empty : ∀ q : A.Q , ε_nfa_δ_star q [] q
+| step : ∀ q0 q1 q2 : A.Q, ∀ x : Sigma, ∀ w : word Sigma,
+            A.δ q0 (some x) q1 → ε_nfa_δ_star q1 w q2 → ε_nfa_δ_star q0 (x :: w) q2 
+| epsilon : ∀ q0 q1 q2 : A.Q, ∀ w : word Sigma, 
+            A.δ q0 none q1 → ε_nfa_δ_star q1 w q2 → ε_nfa_δ_star q0 w q2 
+
+def ε_nfa_lang (A : ε_nfa Sigma) : lang Sigma
+:= λ w , ∃ q0 q1 : A.Q, A.inits q0 ∧ ε_nfa_δ_star A q0 w q1 ∧ A.final q1
+
+
+theorem inversion : ∀ A : ε_nfa Sigma, ∀ q q' : A.Q, ∀ w : word Sigma,
+        ε_nfa_δ_star A q w q' →
+        (w = [] ∧ q' = q)
+        ∨ (∃ x : Sigma, ∃ w' : word Sigma, ∃ q'' : A.Q , w = x :: w' ∧ A.δ q (some x) q'' ∧ ε_nfa_δ_star A q'' w' q')
+        ∨ (∃ q'' : A.Q , A.δ q none q'' ∧ ε_nfa_δ_star A q'' w q') :=
+begin
+  assume A q q' w,
+  assume h,
+  cases h,
+  left,
+  constructor,
+  refl,
+  refl,
+  right, left,
+  existsi h_x,
+  existsi h_w,
+  existsi h_q1,
+  constructor,
+  refl,
+  constructor,
+  exact h_ᾰ,
+  exact h_ᾰ_1,
+  right, right,
+  existsi h_q1,
+  constructor,
+  exact h_ᾰ,
+  exact h_ᾰ_1,
+end
+
+end ε_nfa
 
 
 section dfa2nfa 
@@ -217,32 +321,6 @@ end dfa2nfa
 
 section nfa2dfa
 variables {Sigma : Type}
-
-/-
-structure dfa(Sigma : Type)  : Type 1 :=
-  (Q : Type)
-  [finQ : fintype Q]
-  [decQ : decidable_eq Q]
-  (init : Q)
-  (final : Q → Prop)
-  [decF : decidable_pred final] 
-  (δ : Q → Sigma → Q)
-
-structure nfa(Sigma : Type) : Type 1 := 
-  (Q : Type)
-  [finQ : fintype Q]
-  [decQ : decidable_eq Q]
-  (inits : Q → Prop)
-  [decI : decidable_pred inits]
-  (final : Q → Prop)
-  [decF : decidable_pred final]
-  (δ : Q → Sigma → Q → Prop)
-  [decD : decidable_pred (sigma.uncurry (sigma.uncurry δ))]
-
-structure decPow(A : Type) : Type :=
-  (pred : A → Prop)
-  [decP : decidable_pred pred]
--/
 
 @[reducible]
 def decPow (A : Type*) := Σ (p : A → Prop), decidable_pred p
@@ -447,3 +525,133 @@ begin
 end
 
 end nfa2dfa
+
+
+section nfa2ε_nfa
+
+variables {Sigma : Type} [decidable_eq Sigma]
+
+def nfa2ε_nfa(A : nfa Sigma) : ε_nfa Sigma :=
+  {
+    Q := A.Q,
+    finQ := A.finQ,
+    decQ := A.decQ,
+    inits := A.inits,
+    decI := A.decI,
+    final := A.final,
+    decF := A.decF,
+    δ := λ q0 x q1, x.cases_on' false (λ x, A.δ q0 x q1),
+    decD := λ q, begin
+      dsimp[sigma.uncurry],
+      cases q with q0x q1,
+      cases q0x with q0 x,
+      cases x with x empty,
+      {
+        dsimp[option.cases_on'],
+        letI g:= A.decQ,
+        apply_instance,
+      },
+      {
+        dsimp[option.cases_on'],
+        exact (A.decD ⟨⟨q0, x⟩, q1⟩),
+      }
+    end,
+  }
+
+lemma nfaδ2ε_nfaδ : ∀ A : nfa Sigma, ∀ w : word Sigma, 
+  ∀ q0 q1 : A.Q,
+  (nfa_δ_star A q0 w q1) ↔ ε_nfa_δ_star (nfa2ε_nfa A) q0 w q1
+  :=
+begin
+  assume A w,
+  induction w,
+  {
+    assume q0 q1,
+    dsimp [nfa_δ_star],
+    constructor,
+    assume eq,
+    rewrite eq,
+    fconstructor,
+    assume h,
+    cases h,
+    {
+      refl,
+    },
+    {
+      dsimp [nfa2ε_nfa] at *,
+      cases h_ᾰ,
+    },
+  },
+  {
+    assume q0 q1,
+    dsimp [nfa_δ_star],
+    constructor,
+    {
+      assume h,
+      cases h with q2 h2,
+      dsimp [nfa2ε_nfa],
+      cases h2,
+      fconstructor,
+      exact q2,
+      exact h2_left,
+      apply iff.mp (w_ih q2 q1),
+      exact h2_right,
+    },
+    {
+      assume h,
+      cases h,
+      {
+        existsi h_q1,
+        constructor,
+        exact h_ᾰ,
+        apply iff.mpr (w_ih h_q1 q1),
+        exact h_ᾰ_1,
+      },
+      {
+        dsimp [nfa2ε_nfa] at h_ᾰ,
+        cases h_ᾰ,
+      },
+    },
+  }
+end
+
+lemma emb3 : ∀ A : nfa Sigma, ∀ w : word Sigma,
+  nfa_lang A w ↔ ε_nfa_lang (nfa2ε_nfa A) w :=
+begin
+  assume A w,
+  dsimp [nfa_lang, ε_nfa_lang],
+  constructor,
+  { 
+    assume h,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    existsi q0,
+    existsi q1,
+    constructor,
+    exact (and.elim_left h3),
+    constructor,
+    {
+      cases h3,
+      apply iff.mp (nfaδ2ε_nfaδ A w q0 q1),
+      exact and.elim_left h3_right,
+    },
+    exact (and.elim_right (and.elim_right h3)),
+  },
+  {
+    assume h,
+    cases h with q0 h2,
+    cases h2 with q1 h3,
+    cases h3 with h4 h5,
+    cases h5 with h6 h7,
+    existsi q0,
+    existsi q1,
+    constructor,
+    exact h4,
+    constructor,
+    apply iff.mpr (nfaδ2ε_nfaδ A w q0 q1),
+    exact h6,
+    exact h7,
+  }
+end
+
+end nfa2ε_nfa
