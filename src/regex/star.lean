@@ -435,6 +435,72 @@ begin
   }
 end
 
+lemma star_lemᵣ₁ : ∀ A : ε_nfa Sigma, ∀ q1 q2 : A.Q, ∀ u v : word Sigma,
+  ε_nfa_δ_star A q1 u q2 ∧ A.final q2 → ε_nfa_lang (star_ε_nfa A) v →
+  ε_nfa_δ_star (star_ε_nfa A) (sum.inl q1) (u ++ v) (sum.inr 1) :=
+begin
+  assume A q1 q2 u v h0 h1,
+  cases h0 with q1uq2 finalq2,
+  cases h1 with q1' h1, cases h1 with q2' h1,
+  cases h1 with init h1, cases h1 with q1'vq2' finalq2',
+  cases finalq2',
+  cases init,
+  induction q1uq2,
+  case ε_nfa_δ_star.empty : q
+  {
+    simp, 
+    induction q1'vq2',
+    case ε_nfa_δ_star.empty ε_nfa_δ_star.empty : q'
+    {
+      fconstructor, exact (sum.inr 1),
+      constructor, refl, simp, exact finalq2,
+      cases finalq2', constructor,
+    },
+    case ε_nfa_δ_star.step : q00 q11 q22 x w h00 h11 ih
+    {
+      fconstructor, exact q11,
+      {
+        cases init, cases q11, cases h00 with f _, cases f,
+        cases h00 with f _, cases f,
+      },
+      exact h11,
+    },
+    case ε_nfa_δ_star.epsilon : q00 q11 q22 w h00 h11 ih
+    {
+      cases q00,
+      {
+        cases init,
+      },
+      {
+        cases q11, cases h00 with _ h00, cases h00 with init q00eq0,
+        fconstructor, exact (sum.inl q11), right, simp,
+        exact (and.intro finalq2 init), exact h11,
+        cases h00 with _ h00, cases h00 with q00eq0 q11eq1,
+        cases finalq2', rw q11eq1 at *,
+        cases h11, 
+          fconstructor, exact (sum.inr 1), constructor, refl, simp, exact finalq2,
+          exact h11,
+          cases h11_q1, cases h11_ᾰ with f _, cases f,
+          cases h11_ᾰ with f _, cases f,
+          cases h11_q1, cases h11_ᾰ with _ f, cases f with _ f, cases f,
+          cases h11_ᾰ with _ f, cases f with f _, cases f,
+      }
+    },
+  },
+  case ε_nfa_δ_star.step : q00 q11 q22 x w h00 h11 ih
+  {
+    fconstructor,
+    exact (sum.inl q11), left, exact h00,
+    apply ih, exact finalq2,
+  },
+  case ε_nfa_δ_star.epsilon : q00 q11 q22 w h00 h11 ih
+  {
+    fconstructor,
+    exact (sum.inl q11), left, exact h00,
+    apply ih, exact finalq2,
+  }
+end
+
 lemma star_ε_nfa_lang : ∀ A : ε_nfa Sigma, ∀ w : word Sigma,
   ε_nfa_lang (star_ε_nfa A) w ↔ star_lang (ε_nfa_lang A) w :=
 begin
@@ -472,9 +538,89 @@ begin
   },
   {
     assume h,
-    dsimp [ε_nfa_lang],
+    --dsimp [ε_nfa_lang],
     induction h,
-    sorry,
-    sorry,
+    case star_lang.empty_star
+    {
+      dsimp [ε_nfa_lang, star_ε_nfa],
+      fconstructor, exact (sum.inr 0),
+      fconstructor, exact (sum.inr 1),
+      simp, fconstructor,
+      exact (sum.inr 1),
+      constructor, simp, simp,
+      constructor,
+    },
+    case star_lang.extend : u v h0 h1 ih
+    {
+      fconstructor, exact (sum.inr 0),
+      fconstructor, exact (sum.inr 1),
+      constructor, constructor,
+      constructor,
+      {
+        cases h0 with q0 h0, cases h0 with q1 h0,
+        cases h0 with initq0 h0, cases h0 with Astar finalq1,
+        cases ih with q0' ih, cases ih with q1' ih,
+        cases ih with initq0' ih, cases ih with starAstar finalq1',
+        fconstructor, exact (sum.inl q0),
+        constructor, refl, simp, exact initq0,
+        induction Astar,
+        case ε_nfa_δ_star.empty : q
+        {
+          simp, fconstructor,
+          exact (sum.inl q), right,
+          constructor, exact finalq1, constructor, refl, exact initq0, 
+          
+          cases initq0', cases finalq1',
+          cases starAstar,
+          {
+            cases starAstar_q1;
+            cases starAstar_ᾰ with f _; cases f,
+          },
+          {
+            cases starAstar_q1,
+            cases starAstar_ᾰ with _ h, cases h with init _,
+            fconstructor, exact sum.inl starAstar_q1, right,
+            constructor, exact finalq1, constructor, refl, exact init,
+            exact starAstar_ᾰ_1,
+            cases starAstar_ᾰ with _ h, cases h with _ h, rw h at *,
+            cases starAstar_ᾰ_1,
+            {
+              fconstructor, exact (sum.inr 1), constructor, refl,
+              constructor, exact finalq1, refl,
+              exact starAstar_ᾰ_1,
+            },
+            {
+              cases starAstar_ᾰ_1_q1;
+              cases starAstar_ᾰ_1_ᾰ with f _; cases f,
+            },
+            {
+              cases starAstar_ᾰ_1_q1, cases starAstar_ᾰ_1_ᾰ with _ f, 
+              cases f with _ f, cases f,
+              cases starAstar_ᾰ_1_ᾰ with _ f,
+              cases f with f _, cases f,
+            }
+          }
+        },
+        case ε_nfa_δ_star.step : q00 q11 q22 x w h00 h11 ih
+        {
+          fconstructor, exact (sum.inl q11),
+          left, exact h00, 
+          apply star_lemᵣ₁,
+          exact (and.intro h11 finalq1), existsi [q0', q1'],
+          constructor, exact initq0',
+          constructor, exact starAstar, exact finalq1',
+        },
+        case ε_nfa_δ_star.epsilon : q00 q11 q22 w h00 h11 ih
+        {
+          fconstructor, exact (sum.inl q11),
+          constructor, exact h00,
+          apply star_lemᵣ₁,
+          exact (and.intro h11 finalq1), existsi [q0', q1'],
+          constructor, exact initq0',
+          constructor, exact starAstar, exact finalq1',
+        }
+      },
+      constructor,
+    },
   }
 end
