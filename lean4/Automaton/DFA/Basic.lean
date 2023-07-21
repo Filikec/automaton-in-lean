@@ -72,17 +72,18 @@ private theorem eq.sym : eq t s → eq s t := by
   dsimp [eq]
   dsimp [eq] at h
   intro w
-  apply Iff.intro <;> intro <;> (first | apply (Iff.mp (h w)) | apply (Iff.mpr (h w))) <;> assumption
+  apply Iff.intro 
+  <;> intro 
+  <;> (first | apply (Iff.mp (h w)) | apply (Iff.mpr (h w))) 
+  <;> assumption
 
 -- dfa accepts nil iff init is final
 theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
-  apply Iff.intro
-  · intro h
-    dsimp [dfa_accepts, δ_star ] at h
-    exact h
-  · intro e
-    dsimp [dfa_accepts]
-    exact e
+  apply Iff.intro 
+  <;> intro h 
+  <;> (first |  dsimp [dfa_accepts] | dsimp [dfa_accepts, δ_star ] at h)
+  <;> exact h
+  
 
 
 
