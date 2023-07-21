@@ -22,12 +22,10 @@ instance : DecidablePred (fin_states) := by
   intro n
   dsimp [fin_states]
   cases n with
-  | zero => apply Decidable.isFalse ; trivial
+  | zero => apply Decidable.isFalse; trivial
   | succ n => cases n with
-    | zero => apply Decidable.isTrue ; trivial
-    | succ n => apply Decidable.isFalse
-                simp
-                apply Nat.succ_ne_zero
+    | zero => apply Decidable.isTrue; trivial
+    | succ n => apply Decidable.isFalse; simp; apply Nat.succ_ne_zero
 
 -- accepts all words that end with '1'
 def last_is_one : DFA Char := {q := Nat , init := 0 , fs := fin_states , δ := trans_fun}
