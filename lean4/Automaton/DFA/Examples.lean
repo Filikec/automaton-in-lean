@@ -29,17 +29,20 @@ instance : DecidablePred (fin_states) := by
                 simp
                 apply Nat.succ_ne_zero
 
-def last_is_one : DFA := {q := Nat , init := 0 , fs := fin_states , σ := Char , δ := trans_fun}
+-- accepts all words that end with '1'
+def last_is_one : DFA Char := {q := Nat , init := 0 , fs := fin_states , δ := trans_fun}
 
-def w1 : word last_is_one.σ := [ '1','0' ]
-def w2 : word last_is_one.σ := [ '0','1' ]
-def w3 : word last_is_one.σ := [ ]
+-- words are consumed backwwards, see definition of δ_star
+def w1 : word Char := [ '1','0' ]
+def w2 : word Char := [ '0','1' ]
+def w3 : word Char := [ ]
 
-#eval δ_star last_is_one w1 last_is_one.init -- 0
-#eval accepts last_is_one w1 -- false
 
-#eval δ_star last_is_one w2 last_is_one.init -- 1
-#eval accepts last_is_one w2 -- true
+#eval δ_star last_is_one w1 -- 1
+#eval dfa_accepts last_is_one w1 -- true
 
-#eval δ_star last_is_one w3 last_is_one.init -- 0
-#eval accepts last_is_one w3 -- false
+#eval δ_star last_is_one w2 -- 0
+#eval dfa_accepts last_is_one w2 -- false
+
+#eval δ_star last_is_one w3 -- 0
+#eval dfa_accepts last_is_one w3 -- false
