@@ -1,4 +1,5 @@
 import Automaton.Language.Basic
+import Mathlib.Data.Finset.Basic
 
 /-!
   This file contains the definition of a DFA as well as a few fundamental operations it can do
@@ -10,39 +11,36 @@ import Automaton.Language.Basic
 
 namespace DFA
 
-structure DFA (σ : Type _) where
-  q : Type _    -- states
-  init : q      -- initial state
-  fs : Set q    -- accepting states
-  δ : q → σ → q -- transition function
-  [d : DecidablePred fs]
 
-variable {σ : Type _ } (α : DFA σ) (r s t : DFA σ)
+-- can replace Nat with a type that has decidable equality
+structure DFA (σ : Type _) where
+  q : Finset Nat        -- finite set of states
+  init : Nat            -- initial state
+  fs : Finset Nat       -- accepting states
+  δ : Nat → σ → Nat     -- transition function
+
+variable {σ : Type _ } (r s t : DFA σ)
+
 
 -- δ* function
 -- the state reached after following all transitions given a word
 -- the first letter in list is the last character consumed
-def δ_star : (w : word σ) → t.q
+def δ_star : (w : word σ) → Nat
   | [] => t.init
-  | e :: es => t.δ (δ_star es) e 
+  | e :: es => t.δ (δ_star es) e
 
 -- whether a DFA accepts a word
 def dfa_accepts : (w : word σ) → Prop := by
   intro w
   have f := δ_star t w
-  apply f ∈ t.fs
+  exact f ∈ t.fs
 
 def dfaLang : Lang σ := fun w => dfa_accepts t w
 
 -- DFA language is decidable
-instance decidableLang (w : word σ) [d : DecidablePred (t.fs)] : Decidable (dfa_accepts t w) := by
+instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   dsimp [dfa_accepts]
-  generalize δ_star t w = e
-  apply d
-
--- the set predicate is decidable
-instance decDFA : DecidablePred (t.fs) := by
-  exact t.d
+  apply Finset.decidableMem
 
 -- equality of DFAs
 def eq : Prop := ∀ w : word σ , dfa_accepts t w ↔ dfa_accepts s w
@@ -81,10 +79,7 @@ private theorem eq.sym : eq t s → eq s t := by
 theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
   apply Iff.intro 
   <;> intro h 
-  <;> (first |  dsimp [dfa_accepts] | dsimp [dfa_accepts, δ_star ] at h)
+  <;> (first |  dsimp [dfa_accepts])
   <;> exact h
-  
-
-
 
 end DFA
