@@ -22,7 +22,7 @@ def fin_states : Finset Nat := {1}
 
 
 -- accepts all words that end with '1'
-def last_is_one : DFA Char := {q := states , init := 0 , fs := fin_states , δ := trans_fun}
+def last_is_one : DFA Nat Char := {q := states , init := 0 , fs := fin_states , δ := trans_fun}
 
 -- words are consumed backwwards, see definition of δ_star
 def w1 : word Char := [ '1','0' ]

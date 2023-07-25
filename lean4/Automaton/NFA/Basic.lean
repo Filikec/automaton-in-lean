@@ -9,28 +9,29 @@ import Automaton.Finset.Basic
 
 namespace NFA
 
-structure NFA (σ : Type _) where
-  q : Finset Nat        -- states
-  init : Nat          -- initial state
-  fs : Finset Nat       -- accepting states
-  δ : Nat → σ → Finset Nat -- transition function
+structure NFA (α : Type _)(σ : Type _) where
+  q : Finset α        -- states
+  init : α          -- initial state
+  fs : Finset α       -- accepting states
+  δ : α → σ → Finset α -- transition function
+  [dec : DecidableEq α]
 
-variable {σ : Type _} (t : NFA σ)
+variable {α : Type _}{σ : Type _} [DecidableEq α] (t : NFA α σ)
 
 
 -- one step in the operation of NFA, consuming one character
 -- take the union of all sets of states reachable from current set of states
-def δ_step  (q : Finset Nat) (e : σ) : Finset Nat := q.biUnion (fun n => t.δ n e)
+def δ_step  (q : Finset α) (e : σ) : Finset α := q.biUnion (fun n => t.δ n e)
 
 -- δ* function for NFA
 -- returns set of states reached after inputting a word
-def δ_star : (w : word σ) → Finset Nat
+def δ_star : (w : word σ) → Finset α
   | [] => {t.init}
   | e :: es => δ_step t (δ_star es) e 
 
 -- Whether a word is in the language that the NFA accepts
 def nfa_accepts (w : word σ) : Prop := by
-  have inter : Finset Nat := (δ_star t w) ∩ t.fs
+  have inter : Finset α := (δ_star t w) ∩ t.fs
   exact inter.Nonempty
 
 -- nfa accepts nil iff init is final

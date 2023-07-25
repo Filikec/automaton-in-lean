@@ -12,20 +12,20 @@ import Mathlib.Data.Finset.Basic
 namespace DFA
 
 
--- can replace Nat with a type that has decidable equality
-structure DFA (σ : Type _) where
-  q : Finset Nat        -- finite set of states
-  init : Nat            -- initial state
-  fs : Finset Nat       -- accepting states
-  δ : Nat → σ → Nat     -- transition function
+structure DFA (α : Type _) (σ : Type _) where
+  q : Finset α        -- finite set of states
+  init : α            -- initial state
+  fs : Finset α       -- accepting states
+  δ : α → σ → α     -- transition function
+  [dec : DecidableEq α]
 
-variable {σ : Type _ } (r s t : DFA σ)
+variable [d : DecidableEq α] {α : Type _}{σ : Type _ } (r s t : DFA α σ)
 
 
 -- δ* function
 -- the state reached after following all transitions given a word
 -- the first letter in list is the last character consumed
-def δ_star : (w : word σ) → Nat
+def δ_star : (w : word σ) → α 
   | [] => t.init
   | e :: es => t.δ (δ_star es) e
 
@@ -40,7 +40,7 @@ def dfaLang : Lang σ := fun w => dfa_accepts t w
 -- DFA language is decidable
 instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   dsimp [dfa_accepts]
-  apply Finset.decidableMem
+  apply @Finset.decidableMem α t.dec
 
 -- equality of DFAs
 def eq : Prop := ∀ w : word σ , dfa_accepts t w ↔ dfa_accepts s w
