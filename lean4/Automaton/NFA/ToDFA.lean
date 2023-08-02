@@ -48,7 +48,7 @@ theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ =
   | cons a as s => simp [NFA.δ_star,DFA.δ_star]
                    rw [←s]
                    simp [nfa_to_dfa,nfa_to_dfa_δ,δ_step]
-  
+
 theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
   apply Iff.intro
   · simp [nfa_accepts,dfa_accepts]
