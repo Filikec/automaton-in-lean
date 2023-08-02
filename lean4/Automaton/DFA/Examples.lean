@@ -1,4 +1,6 @@
 import Automaton.DFA.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Fin.Basic
 
 /-!
   Concrete examples of DFA
@@ -6,23 +8,16 @@ import Automaton.DFA.Basic
 
 open Nat DFA
 
-def trans_fun : Nat → Char → Nat
+
+def trans_fun : Fin 3 → Char → Fin 3
   | 0 , '0' => 0
   | 0 , '1' => 1
   | 1 , '0' => 0
   | 1 , '1' => 1
   | _ , _ => 2
 
-
-
-def states : Finset Nat := {0 , 1 , 2}
-
--- 1 is the only final state
-def fin_states : Finset Nat := {1}
-
-
 -- accepts all words that end with '1'
-def last_is_one : DFA Nat Char := {q := states , init := 0 , fs := fin_states , δ := trans_fun}
+def last_is_one : DFA Char := {q := Fin 3 , init := 0 , fs := {2} , δ := trans_fun}
 
 -- words are consumed backwwards, see definition of δ_star
 def w1 : word Char := [ '1','0' ]

@@ -1,5 +1,6 @@
 import Automaton.Language.Basic
 import Mathlib.Data.Finset.Basic
+import Mathlib.Data.FinEnum
 
 /-!
   This file contains the definition of a DFA as well as a few fundamental operations it can do
@@ -12,20 +13,21 @@ import Mathlib.Data.Finset.Basic
 namespace DFA
 
 
-structure DFA (α : Type _) (σ : Type _) where
-  q : Finset α        -- finite set of states
-  init : α            -- initial state
-  fs : Finset α       -- accepting states
-  δ : α → σ → α     -- transition function
-  [dec : DecidableEq α]
+structure DFA (σ : Type _) where
+  q : Type _            -- finite set of states
+  init : q              -- initial state
+  fs : Finset q         -- accepting states
+  δ : q → σ → q         -- transition function
+  [fn : FinEnum q]
 
-variable [d : DecidableEq α] {α : Type _}{σ : Type _ } (r s t : DFA α σ)
+variable  {α : Type _}{σ : Type _ }  [d : FinEnum α] (r s t : DFA σ)
 
+instance : FinEnum t.q := t.fn
 
 -- δ* function
 -- the state reached after following all transitions given a word
 -- the first letter in list is the last character consumed
-def δ_star : (w : word σ) → α 
+def δ_star : (w : word σ) → t.q
   | [] => t.init
   | e :: es => t.δ (δ_star es) e
 
@@ -37,11 +39,13 @@ def dfa_accepts : (w : word σ) → Prop := by
 
 def dfaLang : Lang σ := fun w => dfa_accepts t w
 
+
 -- DFA language is decidable
 instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   dsimp [dfa_accepts]
-  apply @Finset.decidableMem α t.dec
-
+  have : DecidableEq t.q := by exact t.fn.decEq  
+  apply Finset.decidableMem
+  
 -- equality of DFAs
 def eq : Prop := ∀ w : word σ , dfa_accepts t w ↔ dfa_accepts s w
 
