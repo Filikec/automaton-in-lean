@@ -49,5 +49,8 @@ theorem nfa_accepts_nil_iff_final : nfa_accepts t [] ↔ t.init ∈ t.fs := by
     rw [Finset.singleton_inter_of_mem e]
     exact (Finset.singleton_nonempty t.init)
 
+instance decidableLang (w : word σ) : Decidable (nfa_accepts t w) := by
+  dsimp [nfa_accepts]
+  apply Finset.decidableNonempty
 
 end NFA
