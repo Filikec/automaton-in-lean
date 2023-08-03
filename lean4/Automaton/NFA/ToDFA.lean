@@ -12,7 +12,7 @@ open NFA DFA
 
 namespace ToDFA
 
-variable {α : Type _}{σ : Type _} [DecidableEq α] (tn : NFA σ)
+variable {σ : Type _} [FinEnum σ] (tn : NFA σ)
 
 @[simp]
 def nfa_to_dfa_q : Finset (Finset tn.q) := by
@@ -42,26 +42,33 @@ def nfa_to_dfa : DFA σ :=
   {q := nfa_to_dfa_q tn, init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn} 
 
 
-theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = (DFA.δ_star (nfa_to_dfa tn) w) := by
+theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = (DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w) := by
   induction w with
   | nil => simp [NFA.δ_star,DFA.δ_star,nfa_to_dfa]
-  | cons a as s => simp [NFA.δ_star,DFA.δ_star]
-                   rw [←s]
+  | cons a as s => intro q
+                   simp [NFA.δ_star,DFA.δ_star]
+                   rw [s]
                    simp [nfa_to_dfa,nfa_to_dfa_δ,δ_step]
 
+theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = (DFA.δ_star (nfa_to_dfa tn) w) := by
+  simp [NFA.δ_star,DFA.δ_star]
+  apply δ_star_eq'
+
+
 theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
+  have h : (nfa_to_dfa tn).init = ⟨{tn.init} , all_in_q tn {tn.init}⟩ := by simp [nfa_to_dfa]
   apply Iff.intro
-  · simp [nfa_accepts,dfa_accepts]
+  · dsimp [nfa_accepts,dfa_accepts]
     intro a
-    rw [←δ_star_eq]
+    rw [h,←δ_star_eq']
     simp [nfa_to_dfa]
     apply And.intro
     · simp [·⊆·]
     · exact a
   · simp [nfa_accepts,dfa_accepts]
     intro a
-    rw [←δ_star_eq] at a
+    rw [h,←δ_star_eq'] at a
     simp [nfa_to_dfa] at a
     exact a.2
-
+    
 end ToDFA

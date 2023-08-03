@@ -14,28 +14,33 @@ namespace DFA
 
 
 structure DFA (σ : Type _) where
-  q : Type _            -- finite set of states
-  init : q              -- initial state
-  fs : Finset q         -- accepting states
-  δ : q → σ → q         -- transition function
-  [fn : FinEnum q]
+  q : Type _             -- states
+  init : q               -- initial state
+  fs : Finset q          -- accepting states
+  δ : q → σ → q          -- transition function
+  [fq : FinEnum q]
+  [fσ : FinEnum σ]
 
-variable  {α : Type _}{σ : Type _ }  [d : FinEnum α] (r s t : DFA σ)
+variable {σ : Type _} [FinEnum σ] (r s t : DFA σ)
 
-instance : FinEnum t.q := t.fn
+instance : FinEnum t.q := t.fq
 
 -- δ* function
 -- the state reached after following all transitions given a word
 -- the first letter in list is the last character consumed
-def δ_star : (w : word σ) → t.q
-  | [] => t.init
-  | e :: es => t.δ (δ_star es) e
+@[simp]
+def δ_star' (q : t.q) : (w : word σ) → t.q
+  | [] => q
+  | e :: es => δ_star' (t.δ q e) es 
+
+@[simp]
+def δ_star : (w : word σ) → t.q := δ_star' t t.init
 
 -- whether a DFA accepts a word
+@[simp]
 def dfa_accepts : (w : word σ) → Prop := by
   intro w
-  have f := δ_star t w
-  exact f ∈ t.fs
+  exact δ_star t w ∈ t.fs
 
 def dfaLang : Lang σ := fun w => dfa_accepts t w
 
@@ -43,7 +48,7 @@ def dfaLang : Lang σ := fun w => dfa_accepts t w
 -- DFA language is decidable
 instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   dsimp [dfa_accepts]
-  have : DecidableEq t.q := by exact t.fn.decEq  
+  have : DecidableEq t.q := by exact t.fq.decEq  
   apply Finset.decidableMem
   
 -- equality of DFAs
@@ -85,5 +90,6 @@ theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
   <;> intro h 
   <;> (first |  dsimp [dfa_accepts])
   <;> exact h
+
 
 end DFA

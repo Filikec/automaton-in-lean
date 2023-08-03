@@ -16,23 +16,30 @@ structure NFA (σ : Type _) where
   init : q               -- initial state
   fs : Finset q          -- accepting states
   δ : q → σ → Finset q   -- transition function
-  [fn : FinEnum q]
+  [fq : FinEnum q]
+  [fσ : FinEnum σ]
 
-variable {α : Type _}{σ : Type _} [DecidableEq α] (t : NFA σ)
+variable {σ : Type _} (t : NFA σ)
 
-instance : FinEnum t.q := t.fn
+instance : FinEnum t.q := t.fq
 
 -- one step in the operation of NFA, consuming one character
 -- take the union of all sets of states reachable from current set of states
+@[simp]
 def δ_step  (q : Finset t.q) (e : σ) : Finset t.q := q.biUnion (fun n => t.δ n e)
 
 -- δ* function for NFA
 -- returns set of states reached after inputting a word
-def δ_star : (w : word σ) → Finset t.q
-  | [] => {t.init}
-  | e :: es => δ_step t (δ_star es) e 
+@[simp]
+def δ_star' (q : Finset t.q) : (w : word σ) → Finset t.q
+  | [] => q
+  | e :: es => δ_star' (δ_step t q e) es
+
+@[simp]
+def δ_star : (w : word σ) → Finset t.q := δ_star' t {t.init}
 
 -- Whether a word is in the language that the NFA accepts
+@[simp]
 def nfa_accepts (w : word σ) : Prop := by
   have inter : Finset t.q := (δ_star t w) ∩ t.fs
   exact inter.Nonempty

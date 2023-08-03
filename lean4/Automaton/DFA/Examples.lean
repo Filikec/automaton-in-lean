@@ -9,27 +9,25 @@ import Mathlib.Data.Fin.Basic
 open Nat DFA
 
 
-def trans_fun : Fin 3 → Char → Fin 3
-  | 0 , '0' => 0
-  | 0 , '1' => 1
-  | 1 , '0' => 0
-  | 1 , '1' => 1
-  | _ , _ => 2
+def trans_fun : Fin 2 → Fin 2 → Fin 2
+  | 0 , 1 => 1
+  | 0 , 0 => 0
+  | 1 , 1 => 1
+  | 1 , 0 => 0
 
 -- accepts all words that end with '1'
-def last_is_one : DFA Char := {q := Fin 3 , init := 0 , fs := {2} , δ := trans_fun}
+def last_is_one : DFA (Fin 2) := {q := Fin 2, init := 0 , fs := {1} , δ := trans_fun}
 
--- words are consumed backwwards, see definition of δ_star
-def w1 : word Char := [ '1','0' ]
-def w2 : word Char := [ '0','1' ]
-def w3 : word Char := [ ]
+def w₁ : word (Fin 2) := [ 1, 0 ]
+def w₂ : word (Fin 2) := [ 0 ,1 ]
+def w₃ : word (Fin 2) := [ ]
 
 
-#eval δ_star last_is_one w1 -- 1
-#eval dfa_accepts last_is_one w1 -- true
+#eval δ_star' last_is_one last_is_one.init w₁ -- 0
+#eval dfa_accepts last_is_one w₁ -- false
 
-#eval δ_star last_is_one w2 -- 0
-#eval dfa_accepts last_is_one w2 -- false
+#eval δ_star last_is_one w₂ -- 1
+#eval dfa_accepts last_is_one w₂ -- true
 
-#eval δ_star last_is_one w3 -- 0
-#eval dfa_accepts last_is_one w3 -- false
+#eval δ_star last_is_one w₃ -- 0
+#eval dfa_accepts last_is_one w₃ -- false
