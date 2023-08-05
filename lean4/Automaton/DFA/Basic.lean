@@ -95,7 +95,6 @@ private theorem eq.sym : eq t s → eq s t := by
   <;> assumption
 
 
-
 -- dfa accepts nil iff init is final
 theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
   apply Iff.intro 
@@ -108,8 +107,7 @@ lemma δ_δ_star'_concat_eq_δ_star' : (q : t.q) → DFA.δ t (δ_star' t q l) a
   | nil => simp
   | cons e es s => intro q
                    simp
-                   generalize (DFA.δ t q e) = q'
-                   apply s q'
+                   apply s (DFA.δ t q e)
 
 theorem δ_star_append_eq (r : word σ) : (l : word σ) → δ_star t (l++r) = δ_star' t (δ_star t l) r := by
   induction r with
@@ -121,25 +119,6 @@ theorem δ_star_append_eq (r : word σ) : (l : word σ) → δ_star t (l++r) = �
                    rw [δ_δ_star'_concat_eq_δ_star']
 
 
-lemma reachable_fa_w (q : t.q) (w : word σ) : (q' : t.q) → reachable t q q' → reachable t q (δ_star' t q' w) := by
-  induction w with
-  | nil => intro q' r; simp; exact r
-  | cons a as s => intro q' rq'
-                   simp
-                   apply s (DFA.δ t q' a)
-                   apply reachable.step
-                   exact rq'
-
-
-theorem accepts_from_state_if (w : word σ) (q : t.q) (qIn : q ∈ t.fs) : (∀ q' : t.q , (reachable t q q' → q' ∈ t.fs)) → δ_star' t q w ∈ t.fs := by
-  · induction w with
-    | nil => intro _; simp; exact qIn
-    | cons a as _ => intro q'
-                     apply q'
-                     apply reachable_fa_w
-                     exact reachable.base q
-
-
 
 lemma δ_star'_reachable (w : word σ) (q : t.q) : (q' : t.q) → reachable t q q' → reachable t q (δ_star' t q' w) := by
   induction w with
@@ -149,6 +128,15 @@ lemma δ_star'_reachable (w : word σ) (q : t.q) : (q' : t.q) → reachable t q 
                    apply s
                    apply reachable.step
                    exact rq'
+
+theorem accepts_from_state_if (w : word σ) (q : t.q) (qIn : q ∈ t.fs) : (∀ q' : t.q , (reachable t q q' → q' ∈ t.fs)) → δ_star' t q w ∈ t.fs := by
+  · induction w with
+    | nil => intro _; simp; exact qIn
+    | cons a as _ => intro q'
+                     apply q'
+                     apply δ_star'_reachable
+                     exact reachable.base q
+
 
 theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ , δ_star' t q w = q' := by
   apply Iff.intro
