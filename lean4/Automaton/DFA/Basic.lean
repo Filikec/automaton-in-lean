@@ -1,6 +1,7 @@
 import Automaton.Language.Basic
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.FinEnum
+import Automaton.Finset.Basic
 
 /-!
   This file contains the definition of a DFA as well as a few fundamental operations it can do
@@ -8,6 +9,8 @@ import Mathlib.Data.FinEnum
   * Asserts the decidability of the language of DFA
   * Provides a definition for equality of DFA and proves basic properties about the equality
     * Two DFAs are equal, if they accept the same language
+  * Provides an inductive definition of `reachable` - all states that can be reached from a state
+  * Contains some lemmas and theorems that provide an easier way to prove things about accepted langs
 -/
 
 namespace DFA
@@ -33,7 +36,7 @@ def δ_star' (q : t.q) : (w : word σ) → t.q
   | [] => q
   | e :: es => δ_star' (t.δ q e) es 
 
-@[simp]
+
 def δ_star : (w : word σ) → t.q := δ_star' t t.init
 
 -- whether a DFA accepts a word
@@ -43,6 +46,12 @@ def dfa_accepts : (w : word σ) → Prop := by
   exact δ_star t w ∈ t.fs
 
 def dfaLang : Lang σ := fun w => dfa_accepts t w
+
+
+-- all states reachable from current state
+inductive reachable (q : t.q) : t.q → Prop where
+  | base (q' : t.q) : reachable q q
+  | step (q' : t.q) : reachable q q' → ∀ e : σ , reachable q (t.δ q' e)
 
 
 -- DFA language is decidable
@@ -84,12 +93,147 @@ private theorem eq.sym : eq t s → eq s t := by
   <;> (first | apply (Iff.mp (h w)) | apply (Iff.mpr (h w))) 
   <;> assumption
 
+
+
 -- dfa accepts nil iff init is final
 theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
   apply Iff.intro 
   <;> intro h 
   <;> (first |  dsimp [dfa_accepts])
   <;> exact h
+
+lemma δ_δ_star'_concat_eq_δ_star' : (q : t.q) → DFA.δ t (δ_star' t q l) a = δ_star' t q (l ++ [a]) := by
+  induction l with
+  | nil => simp
+  | cons e es s => intro q
+                   simp
+                   generalize (DFA.δ t q e) = q'
+                   apply s q'
+
+theorem δ_star_append_eq (r : word σ) : (l : word σ) → δ_star t (l++r) = δ_star' t (δ_star t l) r := by
+  induction r with
+  | nil => simp
+  | cons a as s => intro l
+                   have : l ++ a :: as = l ++ [a] ++ as := by simp
+                   rw [this,s]
+                   dsimp [δ_star]
+                   rw [δ_δ_star'_concat_eq_δ_star']
+
+
+lemma reachable_fa_w (q : t.q) (w : word σ) : (q' : t.q) → reachable t q q' → reachable t q (δ_star' t q' w) := by
+  induction w with
+  | nil => intro q' r; simp; exact r
+  | cons a as s => intro q' rq'
+                   simp
+                   apply s (DFA.δ t q' a)
+                   apply reachable.step
+                   exact rq'
+
+
+theorem accepts_from_state_if (w : word σ) (q : t.q) (qIn : q ∈ t.fs) : (∀ q' : t.q , (reachable t q q' → q' ∈ t.fs)) → δ_star' t q w ∈ t.fs := by
+  · induction w with
+    | nil => intro _; simp; exact qIn
+    | cons a as _ => intro q'
+                     apply q'
+                     apply reachable_fa_w
+                     exact reachable.base q
+
+
+
+lemma δ_star'_reachable (w : word σ) (q : t.q) : (q' : t.q) → reachable t q q' → reachable t q (δ_star' t q' w) := by
+  induction w with
+  | nil => simp [δ_star]
+  | cons e es s => intro q' rq' 
+                   simp
+                   apply s
+                   apply reachable.step
+                   exact rq'
+
+theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ , δ_star' t q w = q' := by
+  apply Iff.intro
+  · intro rq'
+    induction rq' with
+    | base => exists []
+    | step qc _ e s => apply Exists.elim s
+                       intro w δ'
+                       exists List.concat w e
+                       simp
+                       rw [←δ_δ_star'_concat_eq_δ_star',δ']
+  · intro ex
+    apply Exists.elim ex
+    intro w δ'
+    induction w with
+    | nil => simp at δ'
+             rw [δ']
+             exact reachable.base q'
+    | cons a as _ => simp at δ'
+                     rw [←δ']
+                     apply δ_star'_reachable
+                     apply reachable.step
+                     exact reachable.base q
+
+theorem accepts_prefix_if (l r : word σ) : dfa_accepts t l → (∀ q' : t.q , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
+  intro ac fa
+  simp [dfa_accepts]
+  rw [δ_star_append_eq]
+  apply accepts_from_state_if
+  · exact ac
+  · intro q' rq'
+    apply fa
+    exact rq'
+
+-- To prove that DFA accepts any word starting with a prefix
+-- If after l, a state is reached from which all combinations of transitions lead
+-- to a final state, it always
+theorem accepts_prefix_iff (p : word σ) : dfa_accepts t p ∧ (∀ q' : t.q , (reachable t (δ_star t p) q' → q' ∈ t.fs)) ↔ ∀ s : word σ , dfa_accepts t (p ++ s) := by
+  apply Iff.intro
+  · intro h s
+    apply accepts_prefix_if
+    · exact h.1
+    · apply h.2
+  · intro h
+    simp at h
+    apply And.intro
+    · have : p = p ++ [] := by simp
+      rw [this]
+      apply h []
+    · intro q' r
+      have := Iff.mp (state_reachable_iff t (δ_star t p) q') r
+      apply Exists.elim this
+      intro w δ'
+      rw [←δ_star_append_eq] at δ'
+      rw [←δ']
+      apply h w
+
+lemma accepts_suffix_if (l r : word σ) : (∀ q : t.q , reachable t t.init q → δ_star' t q r ∈ t.fs) → dfa_accepts t (l ++ r) := by
+  intro fa
+  simp
+  rw [δ_star_append_eq]
+  induction l with
+  | nil => simp [δ_star]
+           apply fa
+           exact reachable.base t.init
+  | cons a as _ => simp [δ_star]
+                   apply fa
+                   apply δ_star'_reachable
+                   apply reachable.step
+                   exact reachable.base t.init
+  
+-- To prove that DFA always accepts some suffix
+-- If from any reachable state the word is accepted, it is always accepted
+theorem accepts_suffix_iff (s : word σ) : (∀ p : word σ,  dfa_accepts t (p ++ s)) ↔ (∀ q : t.q , reachable t t.init q → δ_star' t q s ∈ t.fs) := by
+  apply Iff.intro
+  · intro fa q rq
+    have := Iff.mp (state_reachable_iff t t.init q) rq
+    apply Exists.elim this
+    intro w δ'
+    rw [←δ']
+    have : δ_star' t t.init w = δ_star t w := by simp [δ_star]
+    rw [this, ←δ_star_append_eq]
+    apply fa
+  · intro fa w
+    apply accepts_suffix_if
+    exact fa
 
 
 end DFA

@@ -62,6 +62,7 @@ theorem dfa_to_nfa_eq : dfa_nfa_eq td (dfa_to_nfa td) := by
     simp [dfa_accepts] at h
     rw [←(dfa_to_nfa_eq_δ_star' td w)]
     simp [dfa_to_nfa]
+    simp [DFA.δ_star] at h
     rw [Finset.singleton_inter_of_mem h]
     exact (Finset.singleton_nonempty (DFA.δ_star td w))
 

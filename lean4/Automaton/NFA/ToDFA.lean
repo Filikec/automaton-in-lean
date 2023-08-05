@@ -56,19 +56,18 @@ theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ =
 
 
 theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
-  have h : (nfa_to_dfa tn).init = ⟨{tn.init} , all_in_q tn {tn.init}⟩ := by simp [nfa_to_dfa]
   apply Iff.intro
   · dsimp [nfa_accepts,dfa_accepts]
     intro a
-    rw [h,←δ_star_eq']
+    rw [←δ_star_eq]
     simp [nfa_to_dfa]
     apply And.intro
     · simp [·⊆·]
     · exact a
   · simp [nfa_accepts,dfa_accepts]
     intro a
-    rw [h,←δ_star_eq'] at a
+    rw [←δ_star_eq] at a
     simp [nfa_to_dfa] at a
     exact a.2
-    
+
 end ToDFA
