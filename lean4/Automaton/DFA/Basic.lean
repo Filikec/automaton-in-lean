@@ -11,6 +11,7 @@ import Automaton.Finset.Basic
     * Two DFAs are equal, if they accept the same language
   * Provides an inductive definition of `reachable` - all states that can be reached from a state
   * Contains some lemmas and theorems that provide an easier way to prove things about accepted langs
+  * Main theorems about languages : `accepts_prefix_iff` , `accepts_suffix_iff`
 -/
 
 namespace DFA
