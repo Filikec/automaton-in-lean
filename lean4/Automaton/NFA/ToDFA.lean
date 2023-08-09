@@ -42,7 +42,7 @@ def nfa_to_dfa : DFA σ :=
   {q := nfa_to_dfa_q tn, init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn} 
 
 
-theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = (DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w) := by
+theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w := by
   induction w with
   | nil => simp [NFA.δ_star,DFA.δ_star,nfa_to_dfa]
   | cons a as s => intro q
@@ -50,7 +50,7 @@ theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q 
                    rw [s]
                    simp [nfa_to_dfa,nfa_to_dfa_δ,δ_step]
 
-theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = (DFA.δ_star (nfa_to_dfa tn) w) := by
+theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = DFA.δ_star (nfa_to_dfa tn) w := by
   simp [NFA.δ_star,DFA.δ_star]
   apply δ_star_eq'
 

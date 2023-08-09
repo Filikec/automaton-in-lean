@@ -26,6 +26,7 @@ def subtype_of_sset_subtype {α : Type _} {s ss : Finset α} (e : { x // x ∈ s
   exact ⟨ e.1 , by simp; apply Finset.mem_of_subset iss; exact e.2⟩ 
 
 
-def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := ⟨ Multiset.ofList (FinEnum.toList α) , by apply FinEnum.nodup_toList⟩
+def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := (FinEnum.toList α).toFinset
+
 
 end Finset

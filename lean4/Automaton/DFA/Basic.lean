@@ -54,7 +54,6 @@ inductive reachable (q : t.q) : t.q → Prop where
   | base (q' : t.q) : reachable q q
   | step (q' : t.q) : reachable q q' → ∀ e : σ , reachable q (t.δ q' e)
 
-
 -- DFA language is decidable
 instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   dsimp [dfa_accepts]
