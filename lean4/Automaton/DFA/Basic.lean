@@ -64,14 +64,11 @@ instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
 def eq : Prop := ∀ w : word σ , dfa_accepts t w ↔ dfa_accepts s w
 
 private theorem eq.refl : eq t t := by
-  dsimp [eq]
   intro w
   apply Iff.intro <;> (intro ; assumption) 
 
 private theorem eq.trans : eq t s → eq s r → eq t r := by
   intro eq₁ eq₂
-  dsimp [eq] at eq₁ eq₂
-  dsimp [eq]
   intro w
   apply Iff.intro
   · intro r
@@ -85,8 +82,6 @@ private theorem eq.trans : eq t s → eq s r → eq t r := by
 
 private theorem eq.sym : eq t s → eq s t := by
   intro h
-  dsimp [eq]
-  dsimp [eq] at h
   intro w
   apply Iff.intro 
   <;> intro 
@@ -105,7 +100,7 @@ lemma δ_δ_star'_concat_eq_δ_star' : (q : t.q) → DFA.δ t (δ_star' t q l) a
   induction l with
   | nil => simp
   | cons e es s => intro q
-                   simp
+                   simp only [δ_star',List.append_eq]
                    apply s (DFA.δ t q e)
 
 theorem δ_star_append_eq (r : word σ) : (l : word σ) → δ_star t (l++r) = δ_star' t (δ_star t l) r := by
@@ -114,8 +109,7 @@ theorem δ_star_append_eq (r : word σ) : (l : word σ) → δ_star t (l++r) = �
   | cons a as s => intro l
                    have : l ++ a :: as = l ++ [a] ++ as := by simp
                    rw [this,s]
-                   dsimp [δ_star]
-                   rw [δ_δ_star'_concat_eq_δ_star']
+                   simp [δ_star,δ_δ_star'_concat_eq_δ_star']
 
 
 
@@ -123,7 +117,7 @@ lemma δ_star'_reachable (w : word σ) (q : t.q) : (q' : t.q) → reachable t q 
   induction w with
   | nil => simp [δ_star]
   | cons e es s => intro q' rq' 
-                   simp
+                   rw [δ_star']
                    apply s
                    apply reachable.step
                    exact rq'
@@ -145,8 +139,7 @@ theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ 
     | step qc _ e s => apply Exists.elim s
                        intro w δ'
                        exists List.concat w e
-                       simp
-                       rw [←δ_δ_star'_concat_eq_δ_star',δ']
+                       simp [List.concat_eq_append,←δ_δ_star'_concat_eq_δ_star',δ']
   · intro ex
     apply Exists.elim ex
     intro w δ'
@@ -154,7 +147,7 @@ theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ 
     | nil => simp at δ'
              rw [δ']
              exact reachable.base q'
-    | cons a as _ => simp at δ'
+    | cons a as _ => simp only [δ_star'] at δ' 
                      rw [←δ']
                      apply δ_star'_reachable
                      apply reachable.step
@@ -162,8 +155,7 @@ theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ 
 
 theorem accepts_prefix_if (l r : word σ) : dfa_accepts t l → (∀ q' : t.q , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
   intro ac fa
-  simp [dfa_accepts]
-  rw [δ_star_append_eq]
+  rw [dfa_accepts,δ_star_append_eq]
   apply accepts_from_state_if
   · exact ac
   · intro q' rq'
@@ -201,7 +193,7 @@ lemma accepts_suffix_if (l r : word σ) : (∀ q : t.q , reachable t t.init q �
   | nil => simp [δ_star]
            apply fa
            exact reachable.base t.init
-  | cons a as _ => simp [δ_star]
+  | cons a as _ => simp only [δ_star,δ_star']
                    apply fa
                    apply δ_star'_reachable
                    apply reachable.step
