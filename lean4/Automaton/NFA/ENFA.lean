@@ -22,11 +22,9 @@ instance : FinEnum tn.q := tn.fq
 
 -- TODO make εclosure definition better 
 
-def εclosure_set : Nat → Finset tn.q → Finset tn.q := by
-  intro n f
-  match n with
-  | 0 => exact f
-  | n+1 => exact (εclosure_set n f).biUnion (fun s => tn.δ s none) ∪ (εclosure_set n f )
+def εclosure_set : Nat → Finset tn.q → Finset tn.q 
+  | 0 , f => f
+  | n+1 , f => (εclosure_set n f).biUnion (fun s => tn.δ s none) ∪ (εclosure_set n f )
 
 def εclosure : tn.q → Finset tn.q := fun q => εclosure_set tn tn.fq.card {q}
 
@@ -43,5 +41,5 @@ def δ_star (w : word σ) : Finset tn.q := δ_star' tn {tn.init} w
 def εnfa_accepts (w : word σ) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 
 instance : Decidable (εnfa_accepts tn w) := by
-  simp [εnfa_accepts]
+  simp only [εnfa_accepts]
   apply Finset.decidableNonempty
