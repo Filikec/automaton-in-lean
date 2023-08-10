@@ -4,9 +4,9 @@ import Mathlib.Data.FinEnum
 
 namespace Finset
 
-variable {α β : Type _}
+variable {α β : Type _} [DecidableEq α]
 
-theorem nonempty_inter_singleton_imp_in  [DecidableEq α] (e : α) (es : Finset α) : 
+theorem nonempty_inter_singleton_imp_in (e : α) (es : Finset α) : 
   Finset.Nonempty ({e} ∩ es) → e ∈ es := by
     intro ne
     have h₁ : e ∉ es → {e} ∩ es = ∅ := Finset.singleton_inter_of_not_mem
@@ -14,6 +14,12 @@ theorem nonempty_inter_singleton_imp_in  [DecidableEq α] (e : α) (es : Finset 
     apply h₂
     apply (Iff.mp Finset.nonempty_iff_ne_empty)
     exact ne
+
+theorem in_nonempty_inter_singleton (e : α) (es : Finset α) : e ∈ es → Finset.Nonempty ({e} ∩ es) := by
+  intro ein
+  rw [Finset.inter_comm,Finset.inter_singleton_of_mem ein]
+  exact Finset.singleton_nonempty e
+
 
 def fin_of_subtype_to_subtype_of_subfin {qs : Finset α} (s : Finset { x // x ∈ qs }) : { x // x ⊆ Finset.attach qs } := by 
   exact ⟨s , fun x => by simp⟩ 
