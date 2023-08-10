@@ -46,25 +46,22 @@ theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q 
   induction w with
   | nil => simp [NFA.δ_star,DFA.δ_star,nfa_to_dfa]
   | cons a as s => intro q
-                   simp [NFA.δ_star,DFA.δ_star]
-                   rw [s]
-                   simp [nfa_to_dfa,nfa_to_dfa_δ,δ_step]
+                   simp [NFA.δ_star,DFA.δ_star,s,nfa_to_dfa,nfa_to_dfa_δ,δ_step]
 
 theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = DFA.δ_star (nfa_to_dfa tn) w := by
-  simp [NFA.δ_star,DFA.δ_star]
   apply δ_star_eq'
 
 
 theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
   apply Iff.intro
-  · dsimp [nfa_accepts,dfa_accepts]
+  · dsimp only [nfa_accepts,dfa_accepts]
     intro a
     rw [←δ_star_eq]
     simp [nfa_to_dfa]
     apply And.intro
     · simp [·⊆·]
     · exact a
-  · simp [nfa_accepts,dfa_accepts]
+  · simp only [dfa_accepts,nfa_accepts,NFA.δ_star]
     intro a
     rw [←δ_star_eq] at a
     simp [nfa_to_dfa] at a

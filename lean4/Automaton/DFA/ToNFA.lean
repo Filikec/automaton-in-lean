@@ -37,7 +37,7 @@ theorem dfa_to_nfa_eq_δ_star' (w : word σ) : (q : td.q) → {DFA.δ_star' td q
   | nil => intro q; simp [DFA.δ_star,NFA.δ_star]
   | cons a as h => intro q
                    simp [DFA.δ_star,NFA.δ_star]
-                   rw [h];
+                   rw [h]
                    simp [δ_step,dfa_to_nfa,dfa_δ_to_nfa_δ]     
 
 theorem dfa_to_nfa_eq_δ_star (w : word σ) : {DFA.δ_star td w} = NFA.δ_star (dfa_to_nfa td) w := by
@@ -52,17 +52,13 @@ theorem dfa_to_nfa_eq : dfa_nfa_eq td (dfa_to_nfa td) := by
   intro w
   apply Iff.intro
   · intro h
-    simp [nfa_accepts] at h
-    simp [dfa_accepts]
     rw [←(dfa_to_nfa_eq_δ_star' td w)] at h
     apply Finset.nonempty_inter_singleton_imp_in
     exact h
   · intro h
-    simp [nfa_accepts]
-    simp [dfa_accepts] at h
     rw [←(dfa_to_nfa_eq_δ_star' td w)]
-    simp [dfa_to_nfa]
-    simp [DFA.δ_star] at h
+    simp only [dfa_to_nfa]
+    rw [DFA.δ_star] at h
     rw [Finset.singleton_inter_of_mem h]
     exact (Finset.singleton_nonempty (DFA.δ_star td w))
 
