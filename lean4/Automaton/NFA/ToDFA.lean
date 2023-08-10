@@ -8,7 +8,7 @@ import Mathlib.Data.Finset.Powerset
   Then asserts that the converted DFA fulfills this property
 -/
 
-open NFA DFA
+open NFA DFA Finset
 
 namespace ToDFA
 
@@ -16,15 +16,15 @@ variable {σ : Type _} [FinEnum σ] (tn : NFA σ)
 
 @[simp]
 def nfa_to_dfa_q : Finset (Finset tn.q) := by
-  have qs : Finset tn.q := ⟨ Multiset.ofList (FinEnum.toList tn.q) , by apply FinEnum.nodup_toList⟩
+  have qs : Finset tn.q := finenum_to_finset tn.q
   exact qs.powerset
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , by simp [nfa_to_dfa_q]⟩ 
+def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , by simp [nfa_to_dfa_q,finenum_to_finset]⟩ 
 
 @[simp]
 theorem all_in_q (q : Finset tn.q) : q ∈ nfa_to_dfa_q tn := by
-  simp [nfa_to_dfa_q, · ⊆ ·]
+  simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
 
 @[simp]
 def nfa_to_dfa_fs : Finset { x // x ∈ nfa_to_dfa_q tn } := by
@@ -59,7 +59,7 @@ theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_d
     rw [←δ_star_eq]
     simp [nfa_to_dfa]
     apply And.intro
-    · simp [·⊆·]
+    · simp [finenum_to_finset,·⊆·]
     · exact a
   · simp only [dfa_accepts,nfa_accepts,NFA.δ_star]
     intro a

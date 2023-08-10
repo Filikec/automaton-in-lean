@@ -3,9 +3,12 @@ import Mathlib.Data.Option.Basic
 import Automaton.Language.Basic
 import Automaton.Finset.Basic
 import Mathlib.Data.Nat.Basic
+import Automaton.NFA.Basic
+import Mathlib.Data.Finset.Powerset
 
-namespace NFA
+open NFA Finset
 
+namespace εNFA
 
 structure εNFA (σ : Type _) where
   q : Type _                    -- states
@@ -43,3 +46,12 @@ def εnfa_accepts (w : word σ) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 instance : Decidable (εnfa_accepts tn w) := by
   simp only [εnfa_accepts]
   apply Finset.decidableNonempty
+
+
+def εnfa_to_nfa_δ : tn.q → σ → Finset tn.q := by
+  intro q e
+  exact fin_εclosure tn ((εclosure tn q).biUnion (fun q => tn.δ q e))
+
+
+
+end εNFA
