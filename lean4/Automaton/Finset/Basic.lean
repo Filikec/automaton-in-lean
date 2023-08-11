@@ -29,7 +29,7 @@ def subtype_of_subfin_to_fin_of_subtype {qs : Finset α}  (s : { x // x ⊆ Fins
 
 def subtype_of_sset_subtype {α : Type _} {s ss : Finset α} (e : { x // x ∈ ss}) : ss ⊆ s → { x // x ∈ s} := by
   intro iss
-  exact ⟨ e.1 , by simp; apply Finset.mem_of_subset iss; exact e.2⟩ 
+  exact ⟨e.1 , by simp; apply Finset.mem_of_subset iss; exact e.2⟩ 
 
 
 def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := (FinEnum.toList α).toFinset
