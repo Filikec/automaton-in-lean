@@ -53,12 +53,11 @@ def first_is_one : DFA (Fin 2) := {q := Fin 3, init := 0, fs := {1} , δ := δ�
 
 theorem accepts_all_first_1 (w : word (Fin 2)) : dfa_accepts first_is_one ([1] ++ w) := by
   apply accepts_prefix_if
-  · simp
-  · intro q r
-    induction r with
-    | base => simp
-    | step qc rqc e s => simp [first_is_one] at s            
-                         rw [s]
-                         match e with
-                         | 0 => simp
-                         | 1 => simp
+  intro q r
+  induction r with
+  | base => simp
+  | step qc rqc e s => simp [first_is_one] at s            
+                       rw [s]
+                       match e with
+                       | 0 => simp
+                       | 1 => simp
