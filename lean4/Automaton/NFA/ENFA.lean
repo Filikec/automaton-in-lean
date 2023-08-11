@@ -88,28 +88,29 @@ theorem δ_star'_eq (w : word σ): (q : Finset tn.q) → {⟨(εNFA.δ_star' tn 
                    rfl
 
 theorem δ_star_eq (w : word σ) : {⟨εNFA.δ_star tn w , all_in_q tn (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
-  have h := δ_star'_eq tn w {tn.init}
-  simp at h
-  apply h
+  simp only [δ_star]
+  rw [δ_star'_eq tn w {tn.init}]
+  simp
 
 
 theorem εnfa_to_nfa_eq (w : word σ) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
+  simp only [nfa_accepts,εnfa_accepts]
   apply Iff.intro
-  · simp only [nfa_accepts,εnfa_accepts]
-    intro a
+  · intro a
     rw [←δ_star_eq]
     apply in_nonempty_inter_singleton
-    simp
+    simp [finenum_to_finset]
     apply And.intro
-    · simp [· ⊆ ·,finenum_to_finset]
-    · exact a
-  · simp only [nfa_accepts,εnfa_accepts]
-    intro a
+    · simp [· ⊆ ·]
+    . exact a
+  . intro a
     rw [←δ_star_eq] at a
-    have := @nonempty_inter_singleton_imp_in (εnfa_to_nfa tn).q  (εnfa_to_nfa tn).fq.decEq ⟨δ_star tn w, all_in_q tn (δ_star tn w)⟩ (εnfa_to_nfa tn).fs a
+    have := nonempty_inter_singleton_imp_in ⟨δ_star tn w, all_in_q tn (δ_star tn w)⟩ (εnfa_to_nfa tn).fs
+    have := this a
     simp at this
     exact this.2
-  
+
 def εnfa_to_dfa : DFA σ := ToDFA.nfa_to_dfa (εnfa_to_nfa tn)
 
+    
 end εNFA

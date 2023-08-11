@@ -20,11 +20,12 @@ def nfa_to_dfa_q : Finset (Finset tn.q) := by
   exact qs.powerset
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , by simp [nfa_to_dfa_q,finenum_to_finset]⟩ 
-
-@[simp]
 theorem all_in_q (q : Finset tn.q) : q ∈ nfa_to_dfa_q tn := by
   simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
+
+@[simp]
+def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := 
+  ⟨{tn.init} , all_in_q tn {tn.init}⟩ 
 
 @[simp]
 def nfa_to_dfa_fs : Finset { x // x ∈ nfa_to_dfa_q tn } := by
@@ -41,7 +42,6 @@ def nfa_to_dfa_δ : { x // x ∈ nfa_to_dfa_q tn } → σ → { x // x ∈ nfa_t
 def nfa_to_dfa : DFA σ := 
   {q := nfa_to_dfa_q tn, init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn} 
 
-
 theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w := by
   induction w with
   | nil => simp [NFA.δ_star,DFA.δ_star,nfa_to_dfa]
@@ -51,18 +51,16 @@ theorem δ_star_eq' : (q : Finset tn.q) → ⟨(NFA.δ_star' tn q w) , all_in_q 
 theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = DFA.δ_star (nfa_to_dfa tn) w := by
   apply δ_star_eq'
 
-
 theorem nfa_to_dfa_eq (w : word σ) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
+  simp only [nfa_accepts,dfa_accepts]
   apply Iff.intro
-  · dsimp only [nfa_accepts,dfa_accepts]
-    intro a
+  · intro a
     rw [←δ_star_eq]
     simp [nfa_to_dfa]
     apply And.intro
     · simp [finenum_to_finset,·⊆·]
     · exact a
-  · simp only [dfa_accepts,nfa_accepts,NFA.δ_star]
-    intro a
+  · intro a
     rw [←δ_star_eq] at a
     simp [nfa_to_dfa] at a
     exact a.2
