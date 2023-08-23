@@ -54,6 +54,10 @@ inductive reachable (q : t.q) : t.q → Prop where
   | base (q' : t.q) : reachable q q
   | step (q' : t.q) : reachable q q' → ∀ e : σ , reachable q (t.δ q' e)
 
+
+instance : DecidableRel (reachable t) := sorry
+
+
 -- DFA language is decidable
 instance decidableLang (w : word σ) : Decidable (dfa_accepts t w) := by
   simp [dfa_accepts]
@@ -198,6 +202,5 @@ theorem accepts_suffix_iff (s : word σ) : (∀ p : word σ,  dfa_accepts t (p +
   · intro fa w
     apply accepts_suffix_if
     exact fa
-
 
 end DFA
