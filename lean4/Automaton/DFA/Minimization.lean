@@ -23,8 +23,6 @@ def minimization_reachable_fs : Finset {x // x ∈ minimization_reachable_q t} :
   exact this.filter (fun q => q.1 ∈ t.fs)
 
 
-    
-  
 @[simp]
 def minimization_reachable_δ : { x // x ∈ minimization_reachable_q t } → σ → { x // x ∈ minimization_reachable_q t } := by
   intro q e

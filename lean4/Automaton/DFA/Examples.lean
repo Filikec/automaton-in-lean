@@ -1,4 +1,5 @@
 import Automaton.DFA.Basic
+import Automaton.DFA.Minimization
 import Mathlib.Data.Nat.Basic
 import Mathlib.Data.Fin.Basic
 
@@ -61,3 +62,19 @@ theorem accepts_all_first_1 (w : word (Fin 2)) : dfa_accepts first_is_one ([1] +
                        match e with
                        | 0 => simp
                        | 1 => simp
+
+-- automata that has one unreachable state (3)
+def δ₃ : Fin 4 → Fin 2 → Fin 4
+  | 0 , 1 => 1
+  | 0 , 0 => 2
+  | 1 , 1 => 1
+  | 1 , 0 => 1
+  | _ , _ => 2
+
+def first_is_one_extra : DFA (Fin 2) := {q := Fin 4, init := 0, fs := {1} , δ := δ₃}
+
+-- original state size
+#eval first_is_one_extra.fq.card -- 4
+
+-- the size is only 3 (removes the unreachable state)
+#eval (minimization_reachable first_is_one_extra).fq.card -- 3
