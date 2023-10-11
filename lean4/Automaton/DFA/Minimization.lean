@@ -15,7 +15,7 @@ def minimization_reachable_q : Finset t.q := by
 
 @[simp]
 def minimization_reachable_init : { x // x ∈ minimization_reachable_q t } := by
-  exact ⟨t.init , by simp [finenum_to_finset]; apply reachable.base; exact t.init⟩ 
+  exact ⟨t.init , by simp [finenum_to_finset]; exact reachable.base⟩ 
 
 @[simp]
 def minimization_reachable_fs : Finset {x // x ∈ minimization_reachable_q t} := by
@@ -33,7 +33,7 @@ def minimization_reachable_δ : { x // x ∈ minimization_reachable_q t } → σ
 def minimization_reachable : DFA σ := 
   {q := minimization_reachable_q t, init := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
 
-theorem minimization_reachable_δ_star'_eq (w : word σ) : (q : t.q) → (r : reachable t t.init q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [finenum_to_finset]; exact r⟩  w).1 := by
+lemma minimization_reachable_δ_star'_eq (w : word σ) : (q : t.q) → (r : reachable t t.init q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [finenum_to_finset]; exact r⟩  w).1 := by
   induction w with
   | nil => simp
   | cons a as s => simp only [δ_star']
@@ -46,7 +46,7 @@ theorem minimization_reachable_δ_star'_eq (w : word σ) : (q : t.q) → (r : re
 theorem minimization_reachable_δ_star_eq (w : word σ) : δ_star t w = (δ_star (minimization_reachable t) w).1 := by
   simp only [δ_star]
   apply minimization_reachable_δ_star'_eq
-  exact reachable.base t.init
+  exact reachable.base
 
 theorem minimization_reachable_eq (w : word σ) : dfa_accepts t w ↔ dfa_accepts (minimization_reachable t) w := by
   apply Iff.intro
@@ -64,23 +64,3 @@ theorem minimization_reachable_eq (w : word σ) : dfa_accepts t w ↔ dfa_accept
     simp [minimization_reachable] at dfa
     simp [minimization_reachable]
     exact dfa
-
-  
-    
-    
-    
-    
-    
-  
-
-
-
-    
-          
-                   
-            
-
-
-
-    
-    

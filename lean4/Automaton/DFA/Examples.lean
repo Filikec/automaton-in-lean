@@ -78,3 +78,9 @@ def first_is_one_extra : DFA (Fin 2) := {q := Fin 4, init := 0, fs := {1} , δ :
 
 -- the size is only 3 (removes the unreachable state)
 #eval (minimization_reachable first_is_one_extra).fq.card -- 3
+
+
+#eval reachable first_is_one_extra first_is_one_extra.init (0 : Fin 4) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (1 : Fin 4) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (2 : Fin 4) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (3 : Fin 4) -- false

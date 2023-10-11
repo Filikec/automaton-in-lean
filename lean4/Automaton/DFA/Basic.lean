@@ -16,6 +16,9 @@ import Mathlib.Data.List.Card
   * Provides an inductive definition of `reachable` - all states that can be reached from a state
   * Contains some lemmas and theorems that provide an easier way to prove things about accepted langs
   * Main theorems about languages : `accepts_prefix_iff` , `accepts_suffix_iff`
+
+
+  * Also includes prove that `reachable` is Decidable by defining `is_path`
 -/
 
 namespace DFA
@@ -55,7 +58,7 @@ def dfaLang : Lang σ := fun w => dfa_accepts t w
 
 -- all states reachable from current state
 inductive reachable (q : t.q) : t.q → Prop where
-  | base (q' : t.q) : reachable q q
+  | base : reachable q q
   | step (q' : t.q) : reachable q q' → ∀ e : σ , reachable q (t.δ q' e)
 
 
@@ -66,7 +69,7 @@ theorem reachable_trans' (a b : t.q) : reachable t a b → (c : t.q) → reachab
   | step q _ e s =>  intro c qec
                      apply s
                      induction qec with
-                     | base => apply reachable.step; exact reachable.base q
+                     | base => apply reachable.step; exact reachable.base
                      | step q' _ e' s' => apply reachable.step; exact s' 
 
 theorem reachable.trans (a b c : t.q) : reachable t a b → reachable t b c → reachable t a c := by
@@ -147,7 +150,7 @@ theorem accepts_from_state_if (w : word σ) (q : t.q) : (∀ q' : t.q , (reachab
   intro q'
   apply q'
   apply δ_star'_reachable
-  exact reachable.base q
+  exact reachable.base 
 
 theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ , δ_star' t q w = q' := by
   apply Iff.intro
@@ -164,7 +167,7 @@ theorem state_reachable_iff (q q' : t.q) : reachable t q q' ↔ ∃ w : word σ 
     simp only [δ_star'] at δ' 
     rw [←δ']
     apply δ_star'_reachable
-    exact reachable.base q
+    exact reachable.base 
 
 theorem accepts_prefix_if (l r : word σ) : (∀ q' : t.q , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
   intro fa
@@ -202,7 +205,7 @@ lemma accepts_suffix_if (l r : word σ) : (∀ q : t.q , reachable t t.init q �
   rw [δ_star_append_eq]
   apply fa
   apply δ_star'_reachable
-  exact reachable.base t.init
+  exact reachable.base 
   
 -- To prove that DFA always accepts some suffix
 -- If from any reachable state the word is accepted, it is always accepted
@@ -220,8 +223,8 @@ theorem accepts_suffix_iff (s : word σ) : (∀ p : word σ,  dfa_accepts t (p +
     apply accepts_suffix_if
     exact fa
 
--- Define a path given start and finish
--- Specifies whether a list is a path - the elements (vertices) are joined by edges and each vertex exists at most once
+-- Define whether list forms path between start and finish
+-- The elements (vertices) are joined by edges and each vertex exists at most once
 -- The last element must be the target
 def is_path (a z : t.q) (l : List t.q) : Bool := by
   match l with
@@ -249,7 +252,7 @@ theorem target_in_path  (l : List t.q) : (a b : t.q) → is_path t a b l → a �
 
 lemma all_in_path_reachable (l : List t.q) : (a b : t.q) → is_path t a b l → ∀ q : t.q, q ∈ l → reachable t a q := by
   induction l with
-  | nil => intro a b _ q qin; trivial
+  | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b p q qinees
                    cases (Decidable.em (q=e)) with
                    | inr h => have qines := List.mem_of_ne_of_mem h qinees
@@ -299,7 +302,7 @@ def nin_list_nin_list_until {α : Type _} [DecidableEq α] (a : α) (l : List α
 
 lemma path_if_list_until (l : List t.q) : (a b : t.q) → is_path t a b l → ∀ q : t.q, q ∈ l → is_path t a q (list_until q l) := by
   induction l with
-  | nil => intro a b _ q qin; trivial
+  | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b pab q qin 
                    simp [is_path] at pab
                    simp only [list_until]
@@ -318,15 +321,16 @@ lemma path_if_list_until (l : List t.q) : (a b : t.q) → is_path t a b l → �
                            · have h : ¬e=q := by assumption
                              intro qe
                              rw [←qe] at h
-                             trivial
-                           · intro qin; exact qin
+                             contradiction
+                           · intro qin
+                             exact qin
                      · apply nin_list_nin_list_until
                        exact pab.2
                    
 
 lemma all_in_path_path (l : List t.q) : (a b : t.q) → is_path t a b l → ∀ q : t.q, q ∈ l → ∃ l₁ : List t.q, is_path t a q l₁ := by
   match l with
-  | [] => intro a b _ q qin; trivial
+  | [] => intro a b _ q qin; contradiction
   | e::es => intro a b p q qin
              exists list_until q (e::es)
              apply path_if_list_until
@@ -380,7 +384,7 @@ theorem reachable_iff_ex_path (a b : t.q) : reachable t a b ↔ ∃ l : List t.q
     apply Exists.elim ex
     intro l pab
     cases (Decidable.em (a=b)) with
-    | inl h => rw [h]; exact reachable.base b
+    | inl h => rw [h]; exact reachable.base
     | inr h => apply all_in_path_reachable
                · exact pab
                · simp [is_path] at pab
@@ -435,9 +439,9 @@ theorem path_le_size (l : List t.q) : (a b : t.q) → is_path t a b l → l.leng
 
 instance DecidableIsPath : (a b : t.q) → Decidable (∃ l : List t.q, is_path t a b l) := by
   intro a b
-  have : Fintype t.q := ⟨ List.toFinset t.fq.toList, by simp⟩ 
-  have f := @fintypeNodupList t.q t.fq.decEq this
-  have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => is_path t a b l) l) :=  Finset.decidableExistsAndFinset
+  have fin : Fintype t.q := ⟨ List.toFinset t.fq.toList, by simp⟩ 
+  have f : Fintype {l : List t.q // l.Nodup} := @fintypeNodupList t.q t.fq.decEq fin
+  have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => is_path t a b l) l) := Finset.decidableExistsAndFinset
   match h with
   | isTrue t => apply isTrue
                 apply Exists.elim t
@@ -461,8 +465,9 @@ instance DecidableReachable : DecidableRel (reachable t) := by
   apply decidable_of_iff (∃ l : List t.q, is_path t a b l)
   apply Iff.symm
   apply reachable_iff_ex_path
-  
-          
+
+
+
 
 
 end DFA
