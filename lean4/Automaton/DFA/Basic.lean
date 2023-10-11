@@ -32,9 +32,33 @@ structure DFA (σ : Type _) where
   [fq : FinEnum q]
   [fσ : FinEnum σ]
 
-variable {σ : Type _} [FinEnum σ] (r s t : DFA σ)
+variable {σ : Type _} [fσ : FinEnum σ] (r s t : DFA σ)
 
 instance : FinEnum t.q := t.fq
+
+-- ToString
+
+-- if there's enough elements to map them to a-z, do it
+-- otherwise map to numbers (26 - size of alphabet, + 97 to get ascii value)
+def symbolFormat : σ → String :=
+  if fσ.card ≤ 26 then  (fun e => String.singleton (Char.ofNat (fσ.equiv.toFun e + 97)))
+  else (fun e => toString (fσ.equiv.toFun e))
+
+def stateFormat {t : DFA σ} : t.q → String := (fun e => toString (t.fq.equiv.toFun e))
+
+instance : ToString (DFA σ) where
+  toString t := by
+   have s : List String := (t.fσ.toList).map symbolFormat
+   have q : String := stateFormat t.init
+   have qs : List String :=  (t.fq.toList).map stateFormat
+   have fs : List String := ((t.fq.toList).filter (fun e => e ∈ t.fs)).map stateFormat
+   have δ : List String := (t.fq.toList).map (fun x => String.join ((t.fσ.toList).map (fun y => "("++stateFormat x ++ "×" ++ symbolFormat y ++ ")→"++ stateFormat (t.δ x y) ++ " ")))
+   exact "Σ: " ++ String.join (s.map (fun e => e++" ")) ++ "\n" ++
+         "Q: " ++ String.join (qs.map (fun e => e++" ")) ++ "\n" ++
+         "δ: " ++ String.join (δ.map (fun e => "\n"++e)) ++ "\n" ++
+         "q₀: " ++ q ++ "\n" ++
+         "F: " ++ String.join (fs.map (fun e => e++" ")) ++ "\n"
+         
 
 -- δ* function
 -- the state reached after following all transitions given a word
@@ -465,9 +489,6 @@ instance DecidableReachable : DecidableRel (reachable t) := by
   apply decidable_of_iff (∃ l : List t.q, is_path t a b l)
   apply Iff.symm
   apply reachable_iff_ex_path
-
-
-
 
 
 end DFA

@@ -42,6 +42,9 @@ theorem accepts_all_last_1 (w : word (Fin 2)) : dfa_accepts last_is_one (w ++ [1
 #eval δ_star last_is_one w₃ -- 0
 #eval dfa_accepts last_is_one w₃ -- false
 
+
+#eval (last_is_one)
+
 -- accepts all words that start with 1
 def δ₂ : Fin 3 → Fin 2 → Fin 3
   | 0 , 1 => 1
@@ -64,23 +67,25 @@ theorem accepts_all_first_1 (w : word (Fin 2)) : dfa_accepts first_is_one ([1] +
                        | 1 => simp
 
 -- automata that has one unreachable state (3)
-def δ₃ : Fin 4 → Fin 2 → Fin 4
+def δ₃ : Fin 5 → Fin 2 → Fin 5
   | 0 , 1 => 1
   | 0 , 0 => 2
   | 1 , 1 => 1
   | 1 , 0 => 1
   | _ , _ => 2
 
-def first_is_one_extra : DFA (Fin 2) := {q := Fin 4, init := 0, fs := {1} , δ := δ₃}
+def first_is_one_extra : DFA (Fin 2) := {q := Fin 5, init := 0, fs := {1,4} , δ := δ₃}
 
 -- original state size
-#eval first_is_one_extra.fq.card -- 4
+#eval first_is_one_extra.fq.card -- 5
 
 -- the size is only 3 (removes the unreachable state)
 #eval (minimization_reachable first_is_one_extra).fq.card -- 3
 
+#eval (first_is_one_extra)
+#eval (minimization_reachable first_is_one_extra)
 
-#eval reachable first_is_one_extra first_is_one_extra.init (0 : Fin 4) -- true
-#eval reachable first_is_one_extra first_is_one_extra.init (1 : Fin 4) -- true
-#eval reachable first_is_one_extra first_is_one_extra.init (2 : Fin 4) -- true
-#eval reachable first_is_one_extra first_is_one_extra.init (3 : Fin 4) -- false
+#eval reachable first_is_one_extra first_is_one_extra.init (0 : Fin 5) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (1 : Fin 5) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (2 : Fin 5) -- true
+#eval reachable first_is_one_extra first_is_one_extra.init (3 : Fin 5) -- false
