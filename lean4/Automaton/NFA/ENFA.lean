@@ -1,4 +1,3 @@
-import Mathlib.Data.FinEnum
 import Mathlib.Data.Option.Basic
 import Automaton.Language.Basic
 import Automaton.Finset.Basic
@@ -12,53 +11,52 @@ open NFA Finset DFA
 
 namespace εNFA
 
-structure εNFA (σ : Type _) where
-  q : Type _                    -- states
-  init : q                      -- initial state
-  fs : Finset q                 -- accepting states
-  δ : q → Option σ → Finset q   -- transition function
-  [fq : FinEnum q]
-  [fσ : FinEnum σ]
+structure εNFA (σ : Type _) (q : Type _) where
+  σs : Finset σ    -- alphabet
+  qs : Finset q    -- states
+  init : qs        -- initial state
+  fs : Finset qs   -- accepting states
+  δ : qs → Option σs → Finset qs -- transition function
+  [dq : DecidableEq q]
+  [dσ : DecidableEq σ]
 
-variable {σ : Type _} [FinEnum σ] (tn : εNFA σ)
+variable {σ : Type _} {q : Type _} (r s tn : εNFA σ q) [DecidableEq σ] [DecidableEq q]
 
 
-instance : FinEnum tn.q := tn.fq
+-- TODO make εclosure definition better
 
--- TODO make εclosure definition better 
-
-def εclosure_set : Nat → Finset tn.q → Finset tn.q 
+def εclosure_set : Nat → Finset tn.qs → Finset tn.qs
   | 0 , f => f
   | n+1 , f => (εclosure_set n f).biUnion (fun s => tn.δ s none) ∪ (εclosure_set n f )
 
-def εclosure : tn.q → Finset tn.q := fun q => εclosure_set tn tn.fq.card {q}
+def εclosure : tn.qs → Finset tn.qs := fun q => εclosure_set tn tn.qs.card {q}
 
 @[simp]
-def fin_εclosure (f : Finset tn.q) : Finset tn.q := f.biUnion (fun q => εclosure tn q)
+def fin_εclosure (f : Finset tn.qs) : Finset tn.qs := f.biUnion (fun q => εclosure tn q)
 
 @[simp]
-def δ_step (q : Finset tn.q) (e : σ) : Finset tn.q := (fin_εclosure tn q).biUnion (fun q' => tn.δ q' e)
+def δ_step (q : Finset tn.qs) (e : tn.σs) : Finset tn.qs := (fin_εclosure tn q).biUnion (fun q' => tn.δ q' e)
 
-def δ_star' (q : Finset tn.q) : (word σ) → Finset tn.q 
+def δ_star' (q : Finset tn.qs) : (word tn.σs) → Finset tn.qs
   | [] => fin_εclosure tn q
   | a :: as => δ_star' (δ_step tn q a) as
 
-def δ_star (w : word σ) : Finset tn.q := δ_star' tn {tn.init} w
+def δ_star (w : word tn.σs) : Finset tn.qs := δ_star' tn {tn.init} w
 
-def εnfa_accepts (w : word σ) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
+def εnfa_accepts (w : word tn.σs) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 
 instance : Decidable (εnfa_accepts tn w) := by
   simp only [εnfa_accepts]
   apply Finset.decidableNonempty
 
 @[simp]
-def εnfa_to_nfa_q : Finset (Finset tn.q) := (finenum_to_finset tn.q).powerset
+def εnfa_to_nfa_q : Finset (Finset tn.qs) := tn.qs.attach.powerset
 
-theorem all_in_q (qs : Finset tn.q) : qs ∈ εnfa_to_nfa_q tn := by
+theorem all_in_q (qs : Finset tn.qs) : qs ∈ εnfa_to_nfa_q tn := by
   simp [εnfa_to_nfa_q,finenum_to_finset, · ⊆ ·]
 
 @[simp]
-def εnfa_to_nfa_init : { x // x ∈ εnfa_to_nfa_q tn } := ⟨ εclosure tn tn.init , all_in_q tn (εclosure tn tn.init)⟩ 
+def εnfa_to_nfa_init : { x // x ∈ εnfa_to_nfa_q tn } := ⟨ εclosure tn tn.init , all_in_q tn (εclosure tn tn.init)⟩
 
 @[simp]
 def εnfa_to_nfa_fs : Finset { x // x ∈ εnfa_to_nfa_q tn } := by
@@ -66,34 +64,34 @@ def εnfa_to_nfa_fs : Finset { x // x ∈ εnfa_to_nfa_q tn } := by
   apply fs.biUnion
   intro q
   exact {⟨q , all_in_q tn q⟩}
-  
+
 @[simp]
-def εnfa_to_nfa_δ :  { x // x ∈ εnfa_to_nfa_q tn } → σ → Finset { x // x ∈ εnfa_to_nfa_q tn } := by
+def εnfa_to_nfa_δ :  { x // x ∈ εnfa_to_nfa_q tn } → tn.σs → Finset { x // x ∈ εnfa_to_nfa_q tn } := by
   intro q e
   have := fin_εclosure tn (q.1.biUnion (fun q => tn.δ q e))
   exact {⟨ this , all_in_q tn this⟩}
 
 @[simp]
-def εnfa_to_nfa : NFA σ := 
-  {q := εnfa_to_nfa_q tn, init := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
+def εnfa_to_nfa : NFA σ (Finset {x // x ∈ tn.qs}) :=
+  {qs := εnfa_to_nfa_q tn, σs := tn.σs, init := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 @[simp]
-def εnfa_state_to_nfa_state (q : Finset tn.q) : Finset ((εnfa_to_nfa tn).q) := {⟨ q , all_in_q tn q⟩}
+def εnfa_state_to_nfa_state (q : Finset tn.qs) : Finset ((εnfa_to_nfa tn).qs) := {⟨ q , all_in_q tn q⟩}
 
-theorem δ_star'_eq (w : word σ): (q : Finset tn.q) → {⟨(εNFA.δ_star' tn q w) , all_in_q tn (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨fin_εclosure tn q , all_in_q tn (fin_εclosure tn q)⟩} w := by
+theorem δ_star'_eq (w : word tn.σs): (q : Finset tn.qs) → {⟨(εNFA.δ_star' tn q w) , all_in_q tn (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨fin_εclosure tn q , all_in_q tn (fin_εclosure tn q)⟩} w := by
   induction w with
   | nil => simp [δ_star']
   | cons a as s => intro q
-                   simp only [NFA.δ_star',δ_star',s]
-                   rfl
+                   simp [NFA.δ_star',δ_star',s]
 
-theorem δ_star_eq (w : word σ) : {⟨εNFA.δ_star tn w , all_in_q tn (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
+
+theorem δ_star_eq (w : word tn.σs) : {⟨εNFA.δ_star tn w , all_in_q tn (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]
   rw [δ_star'_eq tn w {tn.init}]
   simp
 
 
-theorem εnfa_to_nfa_eq (w : word σ) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
+theorem εnfa_to_nfa_eq (w : word tn.σs) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
   simp only [nfa_accepts,εnfa_accepts]
   apply Iff.intro
   · intro a
@@ -110,7 +108,22 @@ theorem εnfa_to_nfa_eq (w : word σ) : εnfa_accepts tn w ↔ nfa_accepts (εnf
     simp at this
     exact this.2
 
-def εnfa_to_dfa : DFA σ := ToDFA.nfa_to_dfa (εnfa_to_nfa tn)
+def εnfa_to_dfa := ToDFA.nfa_to_dfa (εnfa_to_nfa tn)
 
-    
+theorem εnfa_to_dfa_eq : εnfa_accepts tn w ↔ dfa_accepts (εnfa_to_dfa tn) w := by
+  simp only [εnfa_to_dfa]
+  apply Iff.intro
+  · intro e
+    have := ToDFA.nfa_to_dfa_eq (εnfa_to_nfa tn) w
+    apply this.mp
+    have := εnfa_to_nfa_eq tn w
+    apply this.mp
+    exact e
+  · intro e
+    have := εnfa_to_nfa_eq tn w
+    apply this.mpr
+    have := ToDFA.nfa_to_dfa_eq (εnfa_to_nfa tn) w
+    apply this.mpr
+    exact e
+
 end εNFA

@@ -1,4 +1,5 @@
 import Automaton.NFA.Basic
+import Automaton.DFA.Minimization
 import Automaton.DFA.ToNFA
 import Automaton.NFA.ToDFA
 
@@ -29,6 +30,8 @@ def w₃ : word (Fin 2) := [0 , 1]
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₁
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₂
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₃
+
+#eval minimization_reachable (ToDFA.nfa_to_dfa nfa₁)
 
 -- all strings ending with 01
 def δ₂ : Fin 4 → Fin 2 → Finset (Fin 4)
