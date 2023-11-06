@@ -39,7 +39,7 @@ def δ_star' (q : Finset t.qs) : (w : word t.σs) → Finset t.qs
 
 @[simp]
 def δ_star : (w : word t.σs) → Finset t.qs := δ_star' t {t.init}
-
+#print axioms Finset.biUnion
 -- Whether a word is in the language that the NFA accepts
 @[simp]
 def nfa_accepts (w : word t.σs) : Prop := by

@@ -84,12 +84,10 @@ theorem δ_star'_eq (w : word tn.σs): (q : Finset tn.qs) → {⟨(εNFA.δ_star
   | cons a as s => intro q
                    simp [NFA.δ_star',δ_star',s]
 
-
 theorem δ_star_eq (w : word tn.σs) : {⟨εNFA.δ_star tn w , all_in_q tn (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]
   rw [δ_star'_eq tn w {tn.init}]
   simp
-
 
 theorem εnfa_to_nfa_eq (w : word tn.σs) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
   simp only [nfa_accepts,εnfa_accepts]
