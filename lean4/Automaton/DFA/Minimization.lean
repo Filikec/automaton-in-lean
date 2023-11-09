@@ -65,26 +65,10 @@ theorem minimization_reachable_eq (w : word t.σs) : dfa_accepts t w ↔ dfa_acc
 
 -- all states reachable from current state
 inductive distinct : t.qs → t.qs → Prop where
-  | base (a b : t.qs) : (a ∈ t.fs ∧ b ∉ t.fs) ∨ (a ∉ t.fs ∧ b ∈ t.fs) → distinct a b
+  | base (a b : t.qs) : ¬(a ∈ t.fs ↔ b ∈ t.fs) → distinct a b
   | step (a b : t.qs) : ∀ s : t.σs, distinct (t.δ a s) (t.δ b s) → distinct a b
 
 def nondistinct (a b : t.qs) : Prop := ¬ distinct t a b
-
-lemma distinct_if_not_iff_in_fs {a b : t.qs} : ¬(a ∈ t.fs ↔ b ∈ t.fs) → distinct t a b := by
-  intro iff
-  simp only [δ_star']
-  have h₁ := Decidable.not_iff.mp iff
-  have h₂ := Decidable.not_iff_comm.mp h₁
-  apply distinct.base
-  cases (Decidable.em (a ∈ t.fs)) with
-  | inl l => apply Or.inl
-             apply And.intro
-             · exact l
-             · apply h₂.2
-               exact l
-  | inr r => apply Or.inr
-             exact ⟨r , h₁.mp r⟩
-
 
 lemma distinct_if_δ_star'_distinct (w : word t.σs) : (a b : t.qs) → distinct t (δ_star' t a w) (δ_star' t b w) → distinct t a b := by
   induction w using List.reverseRecOn  with
@@ -97,81 +81,40 @@ lemma distinct_if_δ_star'_distinct (w : word t.σs) : (a b : t.qs) → distinct
                 apply distinct.step
                 exact d
 
-theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ (∃ w : word t.σs, ¬ ((δ_star' t a w) ∈ t.fs ↔ (δ_star' t b w) ∈ t.fs)) := by
-  apply Iff.intro
-  · intro d
-    induction d with
-    | base c d s => exists []
-                    simp only [δ_star']
-                    intro iff
-                    cases s with
-                    | inl l => apply l.2
-                               apply iff.mp
-                               exact l.1
-                    | inr r => apply r.1
-                               apply iff.mpr
-                               exact r.2
-    | step c d s _ h => apply Exists.elim h
-                        intro w iff
-                        exists (s :: w)
-  · intro ex
-    apply Exists.elim ex
-    intro w niff
-    induction w using List.reverseRecOn with
-    | H0 => simp at niff
-            apply distinct_if_not_iff_in_fs
-            exact niff
-    | H1 => rw [←δ_δ_star'_concat_eq_δ_star',←δ_δ_star'_concat_eq_δ_star'] at niff
-            have := distinct_if_not_iff_in_fs t niff
-            apply distinct_if_δ_star'_distinct
-            apply distinct.step
-            exact this
-
-
-lemma distinct_if_word (w : word t.σs) : (a b : t.qs) → (δ_star' t a w ∉ t.fs ↔ δ_star' t b w ∈ t.fs) → distinct t a b := by
-  induction w using List.reverseRecOn  with
+lemma distinct_if_word (w : word t.σs) : (a b : t.qs) → ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) → distinct t a b := by
+  induction w using List.reverseRecOn with
   | H0 => intro a b ex
           simp at ex
           apply distinct.base
-          have := Decidable.iff_iff_and_or_not_and_not.mp ex
-          apply Or.symm
-          rw [Decidable.not_not] at this
-          exact this
+          exact ex
   | H1 es e _ => intro a b ex
                  rw [←δ_δ_star'_concat_eq_δ_star',←δ_δ_star'_concat_eq_δ_star'] at ex
-                 have := distinct_if_not_iff_in_fs t (Decidable.not_iff.mpr ex)
+                 have := distinct.base (DFA.δ t (δ_star' t a es) e) (DFA.δ t (δ_star' t b es) e) ex
                  have : distinct t (δ_star' t a es) (δ_star' t b es) := by apply distinct.step
                                                                            exact this
-
                  apply distinct_if_δ_star'_distinct
                  exact this
 
-theorem distinct_iff_ex_word (a b : t.qs) : (∃ l : word t.σs, δ_star' t a l ∉ t.fs ↔ δ_star' t b l ∈ t.fs) ↔ distinct t a b := by
+theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ ∃ l : word t.σs, ¬(δ_star' t a l ∈ t.fs ↔ δ_star' t b l ∈ t.fs) := by
   apply Iff.intro
+  · intro d
+    induction d with
+    | base a b h => exists []
+    | step a b g _ s => apply Exists.elim s
+                        intro c ex
+                        exists (g::c)
   · intro ex
     apply Exists.elim ex
     intro a ex
     apply distinct_if_word
     · exact ex
-  · intro d
-    induction d with
-    | base a b h => exists []
-                    simp only [δ_star']
-                    apply Decidable.iff_iff_and_or_not_and_not.mpr
-                    apply Or.symm
-                    rw [Decidable.not_not]
-                    exact h
-    | step a b g _ s => apply Exists.elim s
-                        intro c ex
-                        exists (g::c)
 
-lemma nondistinct_iff_nex_notaccepted : nondistinct t a b ↔ (¬∃ w : word t.σs, ¬((δ_star' t a w) ∈ t.fs ↔ (δ_star' t b w) ∈ t.fs)) := by
+lemma nondistinct_iff_nex_notaccepted : nondistinct t a b ↔ ¬∃ w : word t.σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   simp only [nondistinct]
   apply not_congr
   apply distinct_iff_ex_notaccepted
 
-
-
-theorem nondistinct_iff_forall_accepted : nondistinct t a b ↔ (∀ w : word t.σs, ((δ_star' t a w) ∈ t.fs ↔ (δ_star' t b w) ∈ t.fs)) := by
+theorem nondistinct_iff_forall_accepted : nondistinct t a b ↔ ∀ w : word t.σs, (δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   rw [←Decidable.not_exists_not]
   apply nondistinct_iff_nex_notaccepted
+

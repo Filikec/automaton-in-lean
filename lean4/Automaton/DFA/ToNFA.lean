@@ -28,6 +28,7 @@ theorem dfa_to_nfa_eq_init : td.init = (dfa_to_nfa td).init := by simp [dfa_to_n
 
 -- the final states of the converted dfa are the same
 theorem dfa_to_nfa_eq_final : td.fs = (dfa_to_nfa td).fs := by simp [dfa_to_nfa]
+
 -- the δ_star function remains the same (but NFA produces singletons)
 theorem dfa_to_nfa_eq_δ_star' (w : word td.σs) : (q : td.qs) → {DFA.δ_star' td q w} = NFA.δ_star' (dfa_to_nfa td) {q} w := by
   induction w with

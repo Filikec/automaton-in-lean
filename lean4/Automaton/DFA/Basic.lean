@@ -40,7 +40,7 @@ instance : DecidableEq t.σs := by infer_instance
 instance : DecidableEq t.qs := by infer_instance
 
 -- ToString
-instance [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σ q) where
+instance instToString[ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σ q) where
   toString t := by
     have s : List String := (fσ.toList).map toString
     have q : String := toString t.init
@@ -313,8 +313,6 @@ def nin_list_nin_list_until {α : Type _} [DecidableEq α] (a : α) (l : List α
                         · exact ain
 
 
-
-
 lemma path_if_list_until (l : List t.qs) : (a b : t.qs) → is_path t a b l → ∀ q : t.qs, q ∈ l → is_path t a q (list_until q l) := by
   induction l with
   | nil => intro a b _ q qin; contradiction
@@ -440,7 +438,7 @@ theorem path_le_size (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.le
 
 instance DecidableIsPath : (a b : t.qs) → Decidable (∃ l : List t.qs, is_path t a b l) := by
   intro a b
-  have f : Fintype {l : List t.qs // l.Nodup} := @fintypeNodupList t.qs _ _
+  have f : Fintype {p : List t.qs // p.Nodup} := fintypeNodupList
   have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => is_path t a b l) l) := Finset.decidableExistsAndFinset
   match h with
   | isTrue t => apply isTrue
