@@ -63,7 +63,6 @@ theorem minimization_reachable_eq (w : word t.σs) : dfa_accepts t w ↔ dfa_acc
     simp [minimization_reachable]
     exact dfa
 
--- all states reachable from current state
 inductive distinct : t.qs → t.qs → Prop where
   | base (a b : t.qs) : ¬(a ∈ t.fs ↔ b ∈ t.fs) → distinct a b
   | step (a b : t.qs) : ∀ s : t.σs, distinct (t.δ a s) (t.δ b s) → distinct a b
@@ -81,20 +80,6 @@ lemma distinct_if_δ_star'_distinct (w : word t.σs) : (a b : t.qs) → distinct
                 apply distinct.step
                 exact d
 
-lemma distinct_if_word (w : word t.σs) : (a b : t.qs) → ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) → distinct t a b := by
-  induction w using List.reverseRecOn with
-  | H0 => intro a b ex
-          simp at ex
-          apply distinct.base
-          exact ex
-  | H1 es e _ => intro a b ex
-                 rw [←δ_δ_star'_concat_eq_δ_star',←δ_δ_star'_concat_eq_δ_star'] at ex
-                 have := distinct.base (DFA.δ t (δ_star' t a es) e) (DFA.δ t (δ_star' t b es) e) ex
-                 have : distinct t (δ_star' t a es) (δ_star' t b es) := by apply distinct.step
-                                                                           exact this
-                 apply distinct_if_δ_star'_distinct
-                 exact this
-
 theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ ∃ l : word t.σs, ¬(δ_star' t a l ∈ t.fs ↔ δ_star' t b l ∈ t.fs) := by
   apply Iff.intro
   · intro d
@@ -105,9 +90,11 @@ theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ ∃ l : wo
                         exists (g::c)
   · intro ex
     apply Exists.elim ex
-    intro a ex
-    apply distinct_if_word
-    · exact ex
+    intro c ex
+    have : distinct t (δ_star' t a c) (δ_star' t b c) := by apply distinct.base
+                                                            exact ex
+    apply distinct_if_δ_star'_distinct
+    exact this
 
 lemma nondistinct_iff_nex_notaccepted : nondistinct t a b ↔ ¬∃ w : word t.σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   simp only [nondistinct]
@@ -117,4 +104,5 @@ lemma nondistinct_iff_nex_notaccepted : nondistinct t a b ↔ ¬∃ w : word t.�
 theorem nondistinct_iff_forall_accepted : nondistinct t a b ↔ ∀ w : word t.σs, (δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   rw [←Decidable.not_exists_not]
   apply nondistinct_iff_nex_notaccepted
+
 
