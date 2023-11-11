@@ -106,3 +106,59 @@ theorem nondistinct_iff_forall_accepted : nondistinct t a b ↔ ∀ w : word t.�
   apply nondistinct_iff_nex_notaccepted
 
 
+def get_all_pairs : Finset (t.qs × t.qs) := t.qs.attach.biUnion (fun q₁ => t.qs.attach.biUnion (fun q₂ => {⟨q₁,q₂⟩}))
+
+def start : Finset (t.qs × t.qs) := (get_all_pairs t).filter (fun (a,b) => ¬(a ∈ t.fs ↔ b ∈ t.fs))
+
+def step (c a : Finset (t.qs × t.qs)) : Finset (t.qs × t.qs) :=  c ∪ (a.filter (fun (a,b) => ∃ s : t.σs, (t.δ a s, t.δ b s) ∈ c))
+
+lemma card_ne_ne {fa fb : Finset α} : fa.card ≠ fb.card → fa ≠ fb := by
+  intro ne
+  intro eq
+  apply ne
+  rw [eq]
+
+def aux (c : Finset (t.qs × t.qs)) (h : c ⊆ (get_all_pairs t)) : Finset (t.qs × t.qs) := by
+  let a := get_all_pairs t
+  if g : (step t c a).card = c.card then exact c else have h₁ : (step t c a).card >= c.card := by simp only [step]
+                                                                                                  apply Finset.card_le_of_subset
+                                                                                                  apply Finset.subset_union_left
+                                                      have h₂ : card c < card (step t c a) := by apply Nat.lt_iff_le_and_ne.mpr
+                                                                                                 apply And.intro
+                                                                                                 · exact h₁
+                                                                                                 · simp at g
+                                                                                                   intro eq
+                                                                                                   apply g
+                                                                                                   simp at eq
+                                                                                                   apply Eq.symm
+                                                                                                   exact eq
+                                                      have s : step t c a ⊆ a := by simp [step]
+                                                                                    apply Finset.union_subset
+                                                                                    · exact h
+                                                                                    · apply Finset.filter_subset
+                                                      have d : c ⊂ step t c a := by apply Finset.ssubset_iff_subset_ne.mpr
+                                                                                    apply And.intro
+                                                                                    · simp [step]
+                                                                                      apply Finset.subset_union_left
+                                                                                    · apply card_ne_ne
+                                                                                      apply Nat.ne_of_lt
+                                                                                      exact h₂
+                                                      have : a.card - (step t c a).card < a.card - c.card := by apply Nat.sub_lt_sub_left
+                                                                                                                · apply Nat.lt_iff_le_and_ne.mpr
+                                                                                                                  apply And.intro
+                                                                                                                  · apply Finset.card_le_of_subset
+                                                                                                                    exact h
+                                                                                                                  · apply Nat.ne_of_lt
+                                                                                                                    apply Finset.card_lt_card
+                                                                                                                    apply Finset.ssubset_of_ssubset_of_subset
+                                                                                                                    · exact d
+                                                                                                                    · exact s
+                                                                                                                · exact h₂
+                                                      exact aux (step t c a) s
+
+termination_by aux c h => (get_all_pairs t).card - c.card
+
+lemma start_subset_all : (start t) ⊆ (get_all_pairs t) := by
+  simp [start]
+
+def table_filling : Finset (t.qs × t.qs) := aux t (start t) (start_subset_all t)

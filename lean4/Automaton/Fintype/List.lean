@@ -4,6 +4,8 @@ import Mathlib.Data.List.Basic
 import Mathlib.Data.List.Permutation
 import Mathlib.Data.List.Perm
 
+namespace Fintype
+
 variable {α : Type _} {fa : Finset α} [DecidableEq α] (n : Nat)
 
 theorem perm_eq_len {l₁ l₂ : List β} : l₁ ~ l₂ → l₁.length = l₂.length := by
@@ -34,7 +36,7 @@ def add_element_to_fintype (a : fa) : Fintype {x : List fa // x.length = n} → 
   exact ft.elems.biUnion (fun l => add_element_to_list n a l)
 
 
-theorem fintype_list_fintype_eq_n {n : Nat} : Fintype {x : List fa // x.length = n} := by
+def fintype_list_fintype_eq_n {n : Nat} : Fintype {x : List fa // x.length = n} := by
   induction n with
   | zero => exact ⟨ {⟨[] , by simp⟩}, by simp; intro l e; apply List.length_eq_zero.mp; exact e⟩
   | succ n s => let f : Finset { x : List fa // x.length = Nat.succ n} := Finset.biUnion (fa.attach) (fun a => add_element_to_fintype n a s)
@@ -92,7 +94,7 @@ lemma le_sn_gt_n_eq_n (m : Nat) : (n : Nat) → m ≤ Nat.succ n → ¬(m ≤ n)
                                     exact le
 
 
-theorem fintype_list_fintype_le_n {n : Nat} : Fintype {x : List fa // x.length <= n} := by
+def fintype_list_fintype_le_n {n : Nat} : Fintype {x : List fa // x.length <= n} := by
   induction n with
   | zero => exact ⟨ {⟨ [], by simp⟩ }, by simp; intro l e; apply List.length_eq_zero.mp; exact e⟩
   | succ n s => have fe : Fintype { x : List fa // List.length x = Nat.succ n } := fintype_list_fintype_eq_n
@@ -112,3 +114,5 @@ theorem fintype_list_fintype_le_n {n : Nat} : Fintype {x : List fa // x.length <
                                                  · exists this
                                                    simp
                                                    apply fe.2⟩
+
+instance fintypeListLe : Fintype {x : List fa // x.length <= n} := fintype_list_fintype_le_n

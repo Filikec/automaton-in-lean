@@ -7,6 +7,7 @@ import Mathlib.Data.Fintype.List
 import Mathlib.Data.Vector.Basic
 import Mathlib.Data.List.Card
 import Automaton.Finset.Basic
+import Automaton.Fintype.List
 
 /-!
   This file contains the definition of a DFA as well as a few fundamental operations it can do
@@ -147,6 +148,7 @@ theorem accepts_from_state_if (w : word t.σs) (q : t.qs) : (∀ q' : t.qs , (re
   apply q'
   apply δ_star'_reachable
   exact reachable.base
+
 theorem state_reachable_iff (q q' : t.qs) : reachable t q q' ↔ ∃ w : word t.σs , δ_star' t q w = q' := by
   apply Iff.intro
   · intro rq'
@@ -340,6 +342,7 @@ lemma path_if_list_until (l : List t.qs) : (a b : t.qs) → is_path t a b l → 
                      · apply nin_list_nin_list_until
                        exact pab.2
 
+
 lemma all_in_path_path (l : List t.qs) : (a b : t.qs) → is_path t a b l → ∀ q : t.qs, q ∈ l → ∃ l₁ : List t.qs, is_path t a q l₁ := by
   match l with
   | [] => intro a b _ q qin; contradiction
@@ -409,6 +412,7 @@ theorem reachable_iff_ex_path (a b : t.qs) : reachable t a b ↔ ∃ l : List t.
                  exact h
 
 
+
 theorem path_nodup (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.Nodup := by
   induction l with
   | nil => simp
@@ -435,6 +439,71 @@ theorem path_le_size (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.le
   apply path_nodup
   exact pab
 
+
+theorem w_le_card_if_ex_w  (p : word t.qs) : (a b : t.qs) → is_path t a b p → (∃ w : word t.σs, δ_star' t a w = b ∧ w.length = p.length) := by
+  induction p with
+  | nil => intro a b p
+           exists []
+           simp [is_path] at p
+           simp
+           exact p
+  | cons e es s => intro a b p
+                   simp [is_path] at p
+                   have := s e b p.1.2
+                   apply Exists.elim this
+                   intro w h
+                   apply Exists.elim p.1.1
+                   intro s ex
+                   apply Exists.elim ex
+                   intro sin eq
+                   exists ⟨s,sin⟩::w
+                   simp only [δ_star',List.length]
+                   rw [h.2]
+                   apply And.intro
+                   · rw [eq]
+                     exact h.1
+                   · rfl
+
+
+theorem ex_w_iff_ex_w_le_card (a b : t.qs) : (∃ w : word t.σs, δ_star' t a w = b) ↔ (∃ w : word t.σs, δ_star' t a w = b ∧ w.length <= t.qs.card) := by
+  apply Iff.intro
+  · intro ex
+    have := (state_reachable_iff t a b).mpr ex
+    have := (reachable_iff_ex_path t a b).mp this
+    apply Exists.elim this
+    intro p isp
+    have := w_le_card_if_ex_w t p a b isp
+    apply Exists.elim this
+    intro w h
+    exists w
+    apply And.intro
+    · exact h.1
+    · have := path_le_size t p a b isp
+      rw [←h.2] at this
+      exact this
+  · intro ex
+    apply Exists.elim ex
+    intro w h
+    exists w
+    exact h.1
+
+instance DecidableExW {P : word t.σs → Prop} [f : Fintype {x : word t.σs // x.length <= t.qs.card}] [DecidablePred P] : Decidable (∃ w : {x : word t.σs // x.length <= t.qs.card}, P w ) := by
+  have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => P l) l) := Finset.decidableExistsAndFinset
+  match h with
+  | isTrue t => apply isTrue
+                apply Exists.elim t
+                intro w h
+                exists w
+                exact h.2
+  | isFalse g => apply isFalse
+                 intro ex
+                 apply g
+                 apply Exists.elim ex
+                 intro w h
+                 exists w
+                 apply And.intro
+                 · apply f.complete
+                 · exact h
 
 instance DecidableIsPath : (a b : t.qs) → Decidable (∃ l : List t.qs, is_path t a b l) := by
   intro a b
