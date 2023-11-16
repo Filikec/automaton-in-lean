@@ -26,3 +26,4 @@ def w₃ : word (Fin 2) := [ ]
 #eval last_is_one
 
 #eval distinct_table_filling last_is_one ⟨0,by simp⟩ ⟨1,by simp⟩
+#eval distinct_table_filling last_is_one ⟨0,by simp⟩ ⟨0,by simp⟩
