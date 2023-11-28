@@ -11,7 +11,7 @@ import Mathlib.Data.FinEnum
 
 namespace NFA
 
-structure NFA (σ : Type _) (q : Type _) where
+structure NFA {σ : Type _} {q : Type _} where
   σs : Finset σ    -- alphabet
   qs : Finset q    -- states
   init : qs        -- initial state
@@ -20,7 +20,7 @@ structure NFA (σ : Type _) (q : Type _) where
   [dq : DecidableEq q]
   [dσ : DecidableEq σ]
 
-variable {σ : Type _} {q : Type _}  (r s t : NFA σ q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _}  (r s t : @NFA σ q) [DecidableEq σ] [DecidableEq q]
 
 instance : DecidableEq t.σs := by infer_instance
 instance : DecidableEq t.qs := by infer_instance

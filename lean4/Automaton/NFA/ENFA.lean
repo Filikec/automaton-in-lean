@@ -11,7 +11,7 @@ open NFA Finset DFA
 
 namespace εNFA
 
-structure εNFA (σ : Type _) (q : Type _) where
+structure εNFA {σ : Type _} {q : Type _} where
   σs : Finset σ    -- alphabet
   qs : Finset q    -- states
   init : qs        -- initial state
@@ -20,7 +20,7 @@ structure εNFA (σ : Type _) (q : Type _) where
   [dq : DecidableEq q]
   [dσ : DecidableEq σ]
 
-variable {σ : Type _} {q : Type _} (r s tn : εNFA σ q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} (r s tn : @εNFA σ q) [DecidableEq σ] [DecidableEq q]
 
 
 -- TODO make εclosure definition better

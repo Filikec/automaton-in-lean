@@ -26,7 +26,7 @@ import Automaton.Fintype.List
 namespace DFA
 
 
-structure DFA (σ : Type _) (q : Type _) where
+structure DFA {σ : Type _} {q : Type _} where
   σs : Finset σ    -- alphabet
   qs : Finset q    -- states
   init : qs        -- initial state
@@ -35,13 +35,13 @@ structure DFA (σ : Type _) (q : Type _) where
   [dq : DecidableEq q]
   [dσ : DecidableEq σ]
 
-variable {σ : Type _} {q : Type _} (r s t : DFA σ q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} (r s t : @DFA σ q) [DecidableEq σ] [DecidableEq q]
 
 instance : DecidableEq t.σs := by infer_instance
 instance : DecidableEq t.qs := by infer_instance
 
 -- ToString
-instance instToString[ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σ q) where
+instance instToString[ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (@DFA σ q) where
   toString t := by
     have s : List String := (fσ.toList).map toString
     have q : String := toString t.init
