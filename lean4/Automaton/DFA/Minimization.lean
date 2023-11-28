@@ -463,20 +463,23 @@ theorem min_δ'_accepts_iff {w : word t.σs} : {a : t.qs} → (δ_star' t a w �
            simp only [δ_star',state_eq_class,min_dfa]
            apply Iff.intro
            · intro ain
-             simp [min_fs]
+             simp only [min_fs]
+             rw [Finset.mem_filter]
              apply And.intro
-             · simp [min_q]
+             · simp only [min_q]
                apply Finset.mem_attach
              · exists a
-               exists (by simp)
-               exact ⟨nondistinct_self, ain⟩
+               rw [Finset.mem_filter]
+               apply And.intro
+               · exact ⟨by simp, nondistinct_self⟩
+               · exact ain
            · intro h
-             simp [min_fs] at h
+             simp only [min_fs] at h
+             rw [Finset.mem_filter] at h
              apply Exists.elim h.2
-             intro q ex
-             apply Exists.elim ex
-             intro p h
-             have := nondistinct_iff_forall_accepted.mp h.1 []
+             intro q h
+             rw [Finset.mem_filter] at h
+             have := nondistinct_iff_forall_accepted.mp h.1.2 []
              simp only [δ_star'] at this
              apply this.mp
              exact h.2
