@@ -391,38 +391,35 @@ theorem min_δ_step_in (a : { x // x ∈ min_q t }) : a.1.biUnion (fun a => (t.q
   simp only [min_q]
   simp only [min_q] at a
   have := a.2
-  simp at this
+  rw [Finset.mem_biUnion] at this
   apply Exists.elim this
   intro q ex
-  apply Exists.elim ex
-  intro b h
-  simp at h
-  rw [h]
+  rw [Finset.mem_singleton] at ex
   rw [Finset.mem_biUnion]
-  exists (t.δ ⟨q,b⟩ e)
+  exists (t.δ q e)
   exists (by simp)
   rw [Finset.mem_singleton]
   apply mem_iff_mem_eq
   intro el
+  rw [ex.2]
   rw [Finset.mem_biUnion,Finset.mem_filter]
   apply Iff.intro
   · intro elin
     apply Exists.elim elin
     intro q₁ h
     rw [Finset.mem_filter,Finset.mem_filter] at h
-    have : nondistinct (t.δ q₁ e) (t.δ ⟨q,b⟩ e) := nondistinct_step h.1.2
+    have : nondistinct (t.δ q₁ e) (t.δ q e) := nondistinct_step h.1.2
     apply And.intro
     · simp
     · apply nondistinct.Trans
       exact h.2.2
       exact this
   · intro elin
-    exists ⟨q,b⟩
+    exists q
     rw [Finset.mem_filter,Finset.mem_filter]
     apply And.intro
     · exact ⟨by simp, by apply nondistinct_self⟩
     · exact ⟨by simp, by exact elin.2⟩
-
 
 def min_δ : { x // x ∈ min_q t } → { x // x ∈ t.σs } → { x // x ∈ min_q t } := by
   intro a e
@@ -434,32 +431,31 @@ def min_dfa (t : DFA σ q) : DFA σ (Finset t.qs) := {qs := min_q t, σs := t.σ
 def state_eq_class (a : t.qs) : { x // x ∈ (min_dfa t).qs } := ⟨t.qs.attach.filter (fun q => nondistinct q a), by simp [min_dfa,min_q]; exists a; exists (by simp)⟩
 
 lemma step_eq_class_eq : state_eq_class (DFA.δ t a e) = DFA.δ (min_dfa t) (state_eq_class a) e := by
-  simp [state_eq_class,min_dfa,min_δ]
+  simp only [state_eq_class,min_dfa,min_δ]
+  rw [Subtype.mk_eq_mk]
   apply mem_iff_mem_eq
   intro q
   apply Iff.intro
   · intro ein
     rw [Finset.mem_filter] at ein
     rw [Finset.mem_biUnion]
-    simp
-    simp at ein
     exists a
-    exists (by simp)
+    rw [Finset.mem_filter,Finset.mem_filter]
     apply And.intro
-    · apply nondistinct_self
+    · exact ⟨by simp, nondistinct_self⟩
     · exact ein
   · intro ein
-    simp at ein
-    simp
+    rw [Finset.mem_biUnion] at ein
     apply Exists.elim ein
     intro a₁ ex₁
-    apply Exists.elim ex₁
-    intro b₁ h
-    simp at h
-    apply nondistinct.Trans
-    · exact h.2
-    apply nondistinct_step
-    exact h.1
+    rw [Finset.mem_filter,Finset.mem_filter] at ex₁
+    rw [Finset.mem_filter]
+    apply And.intro
+    · simp
+    · apply nondistinct.Trans
+      · exact ex₁.2.2
+      apply nondistinct_step
+      exact ex₁.1.2
 
 theorem min_δ'_accepts_iff {w : word t.σs} : {a : t.qs} → (δ_star' t a w ∈ t.fs ↔ δ_star' (min_dfa t) (state_eq_class a) w ∈ (min_dfa t).fs) := by
   induction w with
