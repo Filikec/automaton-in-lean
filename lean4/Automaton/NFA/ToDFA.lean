@@ -22,7 +22,7 @@ theorem all_in_q (q : Finset tn.qs) : q ∈ nfa_to_dfa_q tn := by
   simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , all_in_q tn {tn.init}⟩ 
+def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , all_in_q tn {tn.init}⟩
 
 @[simp]
 def nfa_to_dfa_fs : Finset { x // x ∈ nfa_to_dfa_q tn } := by
@@ -30,14 +30,14 @@ def nfa_to_dfa_fs : Finset { x // x ∈ nfa_to_dfa_q tn } := by
   apply fs.biUnion
   intro q
   exact {⟨q , all_in_q tn q⟩}
-  
+
 def nfa_to_dfa_δ : { x // x ∈ nfa_to_dfa_q tn } → tn.σs → { x // x ∈ nfa_to_dfa_q tn } := by
   intro q e
   have q₁ : Finset tn.qs := q.1.biUnion (fun q => tn.δ q e)
   exact ⟨q₁ , all_in_q tn q₁⟩
 
-def nfa_to_dfa : DFA σ (Finset {x // x ∈ tn.qs}) := 
-  {qs := nfa_to_dfa_q tn, σs := tn.σs,  init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn} 
+def nfa_to_dfa : DFA σ (Finset {x // x ∈ tn.qs}) :=
+  {qs := nfa_to_dfa_q tn, σs := tn.σs,  init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
 
 theorem δ_star_eq' : (q : Finset tn.qs) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w := by
   induction w with

@@ -34,6 +34,85 @@ def subtype_of_sset_subtype {α : Type _} {s ss : Finset α} (e : { x // x ∈ s
   intro iss
   exact ⟨e.1 , by simp; apply Finset.mem_of_subset iss; exact e.2⟩
 
+theorem filter_eq_filter {α : Type _} [DecidableEq α] (f : Finset α) (P A : α → Prop) [DecidablePred P] [DecidablePred A] (h : ∀ a : α, P a ↔ A a) : f.filter P = f.filter A := by
+  induction f using Finset.induction_on with
+  | empty => trivial
+  | insert _ eq => rw [Finset.insert_eq,Finset.filter_union,Finset.filter_union,eq]
+                   have : (a : α) → Finset.filter P {a} = Finset.filter A {a} := by intro a
+                                                                                    rw [Finset.filter_singleton,Finset.filter_singleton]
+                                                                                    split_ifs
+                                                                                    · rfl
+                                                                                    · have : A a := by apply (h a).mp
+                                                                                                       assumption
+                                                                                      contradiction
+                                                                                    · have : P a := by apply (h a).mpr
+                                                                                                       assumption
+                                                                                      contradiction
+                                                                                    · rfl
+
+                   rw [this]
+
+theorem mem_iff_insert_mem_iff_sdiff {α : Type _} [DecidableEq α] {a : α} {fa fb : Finset α} (h₁ : a ∉ fa) (h₂ : ∀ e, e ∈ insert a fa ↔ e ∈ fb) : (∀ e , e ∈ fa ↔ e ∈ (fb \ {a})) := by
+  intro e
+  apply Iff.intro
+  · intro ein
+    apply Finset.mem_sdiff.mpr
+    apply And.intro
+    · apply (h₂ e).mp
+      apply Finset.mem_insert.mpr
+      apply Or.inr
+      exact ein
+    have : e ≠ a := by intro eq
+                       rw [eq] at ein
+                       contradiction
+    rw [Finset.mem_singleton]
+    exact this
+  · intro ein
+    rw [Finset.mem_sdiff] at ein
+    have := (h₂ e).mpr ein.1
+    rw [Finset.mem_insert] at this
+    apply Or.elim this
+    · intro eq
+      have : e ≠ a := by apply Finset.not_mem_singleton.mp
+                         exact ein.2
+      contradiction
+    · intro h
+      exact h
+
+lemma mem_iff_mem_eq_lemma {α : Type _} [DecidableEq α] {b : α} {f : Finset α} : (∀ (a : α), a ∈ (∅ : Finset α) ↔ a ∈ insert b f) → False := by
+  intro fa
+  have : b ∈ ∅ := by apply (fa b).mpr
+                     apply Finset.mem_insert_self
+  contradiction
+
+theorem mem_iff_mem_eq {α : Type _} [DecidableEq α] : {fa fb : Finset α} → (h : ∀ a : α, a ∈ fa ↔ a ∈ fb) → fa = fb := by
+  intro fa
+  induction fa using Finset.induction_on with
+  | empty => intro fb h
+             induction fb using Finset.induction_on with
+             | empty => rfl
+             | insert _ eq => rw [eq]
+                              have : False := mem_iff_mem_eq_lemma h
+                              contradiction
+                              intro a
+                              apply Iff.intro
+                              · intro einf
+                                contradiction
+                              · intro ain
+                                apply (h a).mpr
+                                apply Finset.mem_insert.mpr
+                                apply Or.inr
+                                exact ain
+  | insert _ eq =>  intro fb h
+                    rw [Finset.insert_eq]
+                    have := (mem_iff_insert_mem_iff_sdiff (by assumption) h)
+                    have := eq this
+                    rw [this]
+                    rw [Finset.union_comm,Finset.sdiff_union_self_eq_union]
+                    apply Finset.union_eq_left_iff_subset.mpr
+                    apply Finset.singleton_subset_set_iff.mpr
+                    apply (h _).mp
+                    apply Finset.mem_insert_self
 
 def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := (FinEnum.toList α).toFinset
 
