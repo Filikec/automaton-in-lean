@@ -85,7 +85,7 @@ lemma mem_iff_mem_eq_lemma {α : Type _} [DecidableEq α] {b : α} {f : Finset �
                      apply Finset.mem_insert_self
   contradiction
 
-theorem mem_iff_mem_eq {α : Type _} [DecidableEq α] : {fa fb : Finset α} → (h : ∀ a : α, a ∈ fa ↔ a ∈ fb) → fa = fb := by
+theorem mem_iff_mem_eq : {fa fb : Finset α} → (h : ∀ a : α, a ∈ fa ↔ a ∈ fb) → fa = fb := by
   intro fa
   induction fa using Finset.induction_on with
   | empty => intro fb h
@@ -113,6 +113,16 @@ theorem mem_iff_mem_eq {α : Type _} [DecidableEq α] : {fa fb : Finset α} → 
                     apply Finset.singleton_subset_set_iff.mpr
                     apply (h _).mp
                     apply Finset.mem_insert_self
+
+theorem eq_mem_iff_mem  : {fa fb : Finset α} → fa = fb → ∀ a : α, a ∈ fa ↔ a ∈ fb := by
+  intro fa fb eq
+  rw [eq]
+  simp
+
+theorem eq_iff_fa_mem {fa fb : Finset α} : fa = fb ↔ ∀ a : α, a ∈ fa ↔ a ∈ fb := by
+  apply Iff.intro
+  · apply eq_mem_iff_mem
+  · apply mem_iff_mem_eq
 
 def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := (FinEnum.toList α).toFinset
 
