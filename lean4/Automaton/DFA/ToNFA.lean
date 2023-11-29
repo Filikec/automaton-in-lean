@@ -13,15 +13,15 @@ open DFA NFA
 
 namespace ToNFA
 
-variable {σ : Type _} [DecidableEq σ]  {q : Type _} [DecidableEq q]  (td sd : DFA σ q) (tn sn : NFA σ q)
+variable {σ : Type _} [DecidableEq σ]  {q : Type _} [DecidableEq q]  (td sd : @DFA σ q) (tn sn : @NFA σ q)
 
 
 -- to convert into nfa δ, just create singleton for each state
 def dfa_δ_to_nfa_δ : td.qs → td.σs → Finset td.qs := λ q e => {td.δ q e}
 
 -- conversion from nfa to dfa
-def dfa_to_nfa : NFA σ q := by
-  exact {qs := td.qs , init := td.init , fs := td.fs , δ := dfa_δ_to_nfa_δ td : NFA σ q}
+def dfa_to_nfa : @NFA σ q := by
+  exact {qs := td.qs , init := td.init , fs := td.fs , δ := dfa_δ_to_nfa_δ td : @NFA σ q}
 
 -- the initial state in NFA is same as in the original DFA
 theorem dfa_to_nfa_eq_init : td.init = (dfa_to_nfa td).init := by simp [dfa_to_nfa]

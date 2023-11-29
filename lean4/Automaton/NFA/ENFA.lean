@@ -72,7 +72,7 @@ def εnfa_to_nfa_δ :  { x // x ∈ εnfa_to_nfa_q tn } → tn.σs → Finset { 
   exact {⟨ this , all_in_q tn this⟩}
 
 @[simp]
-def εnfa_to_nfa : NFA σ (Finset {x // x ∈ tn.qs}) :=
+def εnfa_to_nfa : @NFA σ (Finset {x // x ∈ tn.qs}) :=
   {qs := εnfa_to_nfa_q tn, σs := tn.σs, init := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 @[simp]

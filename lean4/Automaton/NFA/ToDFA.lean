@@ -12,7 +12,7 @@ open NFA DFA Finset
 
 namespace ToDFA
 
-variable {σ : Type _} {q : Type _} [DecidableEq σ] [DecidableEq q] (r s tn : NFA σ q)
+variable {σ : Type _} {q : Type _} [DecidableEq σ] [DecidableEq q] (r s tn : @NFA σ q)
 
 @[simp]
 def nfa_to_dfa_q : Finset (Finset tn.qs) := tn.qs.attach.powerset
@@ -36,7 +36,7 @@ def nfa_to_dfa_δ : { x // x ∈ nfa_to_dfa_q tn } → tn.σs → { x // x ∈ n
   have q₁ : Finset tn.qs := q.1.biUnion (fun q => tn.δ q e)
   exact ⟨q₁ , all_in_q tn q₁⟩
 
-def nfa_to_dfa : DFA σ (Finset {x // x ∈ tn.qs}) :=
+def nfa_to_dfa : @DFA σ (Finset {x // x ∈ tn.qs}) :=
   {qs := nfa_to_dfa_q tn, σs := tn.σs,  init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
 
 theorem δ_star_eq' : (q : Finset tn.qs) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w := by
