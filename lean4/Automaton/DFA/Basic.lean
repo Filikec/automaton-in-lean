@@ -246,7 +246,8 @@ theorem target_in_path  (l : List t.qs) : (a b : t.qs) → is_path t a b l → a
   induction l with
   | nil => intro a b pab _; simp [is_path] at pab; contradiction
   | cons e es s => intro a b pab _;
-                   simp [is_path] at pab
+                   simp only [is_path] at pab
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at pab
                    have := s e b pab.1.2
                    cases (Decidable.em (b=e)) with
                    | inl h => apply List.mem_cons.mpr
@@ -264,18 +265,17 @@ lemma all_in_path_reachable (l : List t.qs) : (a b : t.qs) → is_path t a b l �
   induction l with
   | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b p q qinees
+                   simp only [is_path] at p
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at p
                    cases (Decidable.em (q=e)) with
                    | inr h => have qines := List.mem_of_ne_of_mem h qinees
-                              simp [is_path] at p
                               have req : reachable t e q := by apply s
                                                                exact p.1.2
                                                                exact qines
                               have rae : reachable t a e := by apply Exists.elim (p.1.1)
                                                                intro s δs
                                                                apply (Iff.mpr (state_reachable_iff t a e))
-                                                               apply Exists.elim δs
-                                                               intro sin δ
-                                                               exists [⟨s, sin⟩]
+                                                               exists [s]
                               apply reachable.trans
                               · exact rae
                               · exact req
@@ -319,14 +319,17 @@ lemma path_if_list_until (l : List t.qs) : (a b : t.qs) → is_path t a b l → 
   induction l with
   | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b pab q qin
-                   simp [is_path] at pab
+                   simp only [is_path] at pab
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at pab
                    simp only [list_until]
                    split
-                   · simp [is_path]
+                   · simp only [is_path]
+                     rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq]
                      apply And.intro
-                     · exact pab.1.1
-                     · assumption
-                   · simp [is_path]
+                     · exact ⟨pab.1.1, by assumption⟩
+                     · simp
+                   · simp only [is_path]
+                     rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq]
                      apply And.intro
                      · apply And.intro
                        · exact pab.1.1
@@ -356,30 +359,38 @@ lemma all_in_path_path (l : List t.qs) : (a b : t.qs) → is_path t a b l → �
 lemma path_concat (l : List t.qs) : (a b c : t.qs) → is_path t a b l → (∃ e : t.σs, t.δ b e = c) → c ∉ l → is_path t a c (l.concat c) := by
   induction l with
   | nil => intro a b c p ex cin
-           simp [is_path]
-           simp [is_path] at p
+           simp only [is_path]
+           rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq]
+           simp only [is_path] at p
+           rw [decide_eq_true_eq] at p
+           rw [decide_eq_true_eq]
            rw [←p] at ex
            apply Exists.elim ex
-           intro e δ
-           exists e
-           exists e.2
+           intro e _
+           apply And.intro
+           · exact ⟨ex, by trivial⟩
+           · exact cin
   | cons e es s => intro a b c p ex cin
-                   simp [is_path]
-                   simp [is_path] at p
+                   simp only [is_path]
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq]
+                   simp only [is_path] at p
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at p
                    apply And.intro
                    · apply And.intro
                      · exact p.1.1
-                     · rw [←List.concat_eq_append]
+                     · rw [List.concat_eq_append,←List.concat_eq_append]
                        apply s
                        · exact p.1.2
                        · exact ex
                        · exact List.not_mem_of_not_mem_cons cin
-                   · apply And.intro
+                   · have : c≠e := List.ne_of_not_mem_cons cin
+                     rw [List.concat_eq_append]
+                     apply List.not_mem_append
                      · exact p.2
-                     · have : c≠e := List.ne_of_not_mem_cons cin
-                       intro ec
-                       apply this
-                       rw [ec]
+                     · intro ein
+                       have := List.eq_of_mem_singleton ein
+                       have := Eq.symm this
+                       contradiction
 
 theorem reachable_iff_ex_path (a b : t.qs) : reachable t a b ↔ ∃ l : List t.qs , is_path t a b l := by
   apply Iff.intro
@@ -417,7 +428,8 @@ theorem path_nodup (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.Nodu
   induction l with
   | nil => simp
   | cons e es s => intro a b h
-                   simp [is_path] at h
+                   simp only [is_path] at h
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at h
                    simp only [List.nodup_cons]
                    apply And.intro
                    · apply h.2
@@ -444,19 +456,19 @@ theorem w_le_card_if_ex_w  (p : word t.qs) : (a b : t.qs) → is_path t a b p �
   induction p with
   | nil => intro a b p
            exists []
-           simp [is_path] at p
-           simp
-           exact p
+           simp only [is_path] at p
+           rw [decide_eq_true_eq] at p
+           simp only [is_path,δ_star']
+           exact ⟨p,by rfl⟩
   | cons e es s => intro a b p
-                   simp [is_path] at p
+                   simp only [is_path] at p
+                   rw [Bool.and_eq_true,Bool.and_eq_true,decide_eq_true_eq,decide_eq_true_eq] at p
                    have := s e b p.1.2
                    apply Exists.elim this
                    intro w h
                    apply Exists.elim p.1.1
-                   intro s ex
-                   apply Exists.elim ex
-                   intro sin eq
-                   exists ⟨s,sin⟩::w
+                   intro s eq
+                   exists s::w
                    simp only [δ_star',List.length]
                    rw [h.2]
                    apply And.intro

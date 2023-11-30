@@ -34,12 +34,12 @@ theorem dfa_to_nfa_eq_δ_star' (w : word td.σs) : (q : td.qs) → {DFA.δ_star'
   induction w with
   | nil => intro q; simp [DFA.δ_star,NFA.δ_star]
   | cons a as h => intro q
-                   simp [DFA.δ_star,NFA.δ_star]
+                   simp only [DFA.δ_star,NFA.δ_star,DFA.δ_star']
                    rw [h]
                    simp [δ_step,dfa_to_nfa,dfa_δ_to_nfa_δ]
 
 theorem dfa_to_nfa_eq_δ_star (w : word td.σs) : {DFA.δ_star td w} = NFA.δ_star (dfa_to_nfa td) w := by
-  simp [DFA.δ_star, NFA.δ_star]
+  simp only [DFA.δ_star, NFA.δ_star]
   have h : (dfa_to_nfa td).init = td.init := by simp [dfa_to_nfa]
   rw [h]
   apply dfa_to_nfa_eq_δ_star'
