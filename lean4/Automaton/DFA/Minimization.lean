@@ -72,7 +72,7 @@ def nondistinct (a b : t.qs) : Prop := ¬ distinct a b
 lemma distinct_if_δ_star'_distinct (w : word t.σs) : (a b : t.qs) → distinct (δ_star' t a w) (δ_star' t b w) → distinct a b := by
   induction w using List.reverseRecOn  with
   | H0 => intro a b d
-          simp at d
+          simp only[δ_star'] at d
           exact d
   | H1 a b s => intro a b d
                 rw [←δ_δ_star'_concat_eq_δ_star',←δ_δ_star'_concat_eq_δ_star'] at d
@@ -183,7 +183,7 @@ lemma start_subset_all : start  ⊆ all_pairs t := by
 
 def step (c a : Finset (t.qs × t.qs)) : Finset (t.qs × t.qs) := c ∪ (a.filter (fun (a,b) => ∃ s : t.σs, (t.δ a s, t.δ b s) ∈ c))
 
-theorem table_aux_decreasing : ¬card (step c (all_pairs t)) = card c → c ⊆ all_pairs t → (all_pairs t).card - (step c (all_pairs t)).card < (all_pairs t).card - c.card := by
+lemma table_aux_decreasing : ¬card (step c (all_pairs t)) = card c → c ⊆ all_pairs t → (all_pairs t).card - (step c (all_pairs t)).card < (all_pairs t).card - c.card := by
   intro g h
   have h₁ : (step c (all_pairs t)).card >= c.card := by simp only [step]
                                                         apply Finset.card_le_of_subset
@@ -191,10 +191,8 @@ theorem table_aux_decreasing : ¬card (step c (all_pairs t)) = card c → c ⊆ 
   have h₂ : card c < card (step c (all_pairs t)) := by apply Nat.lt_iff_le_and_ne.mpr
                                                        apply And.intro
                                                        · exact h₁
-                                                       · simp at g
-                                                         intro eq
+                                                       · intro eq
                                                          apply g
-                                                         simp at eq
                                                          apply Eq.symm
                                                          exact eq
   have s : step c (all_pairs t) ⊆ (all_pairs t) := by simp only [step]
@@ -264,23 +262,25 @@ def ex_word_prop : Finset (t.qs × t.qs) → Prop := fun f => ∀ p : (t.qs × t
 
 lemma exists_notaccepted_if_table_filling (t : @DFA σ q) : ex_word_prop (table_aux start (@start_subset_all σ q t _)) := by
   apply table_aux_forall
-  · simp [ex_word_prop,start]
-    intro a b c d _ nin
+  · simp only [ex_word_prop,start]
+    intro a
+    rw [Finset.mem_filter]
+    intro b
     exists []
+    simp only [δ_star']
+    exact b.2
   · intro f p
-    simp [ex_word_prop] at p
-    simp [ex_word_prop,step]
-    intro a p₁ b p₂ h
-    cases h with
+    simp only [ex_word_prop] at p
+    simp only [ex_word_prop,step]
+    intro a p
+    rw [Finset.mem_union] at p
+    cases p with
     | inl h => apply p; exact h
-    | inr h => apply Exists.elim h.2
+    | inr h => rw [Finset.mem_filter] at h
+               apply Exists.elim h.2
                intro s h₁
-               apply Exists.elim h₁
-               intro p₃ e
-               have := p (t.δ ⟨a, p₁⟩ ⟨s , p₃⟩) (by simp) (t.δ ⟨b, p₂⟩ ⟨s , p₃⟩) (by simp) e
-               apply Exists.elim this
-               intro w h
                rw [←distinct_iff_ex_notaccepted]
+               have := p (DFA.δ t a.fst s, DFA.δ t a.snd s) h₁
                rw [←distinct_iff_ex_notaccepted] at this
                apply distinct.step
                exact this
