@@ -72,7 +72,7 @@ def nondistinct (a b : t.qs) : Prop := ¬ distinct a b
 lemma distinct_if_δ_star'_distinct (w : word t.σs) : (a b : t.qs) → distinct (δ_star' t a w) (δ_star' t b w) → distinct a b := by
   induction w using List.reverseRecOn  with
   | H0 => intro a b d
-          simp only[δ_star'] at d
+          simp only [δ_star'] at d
           exact d
   | H1 a b s => intro a b d
                 rw [←δ_δ_star'_concat_eq_δ_star',←δ_δ_star'_concat_eq_δ_star'] at d

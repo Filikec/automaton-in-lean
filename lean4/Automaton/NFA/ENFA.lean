@@ -95,16 +95,22 @@ theorem εnfa_to_nfa_eq (w : word tn.σs) : εnfa_accepts tn w ↔ nfa_accepts (
   · intro a
     rw [←δ_star_eq]
     apply in_nonempty_inter_singleton
-    simp [finenum_to_finset]
+    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter]
+    exists δ_star tn w
     apply And.intro
-    · simp [· ⊆ ·]
-    . exact a
+    · exact ⟨by simp [εnfa_to_nfa_q,δ_star,· ⊆ ·], a⟩
+    · simp [δ_star]
   . intro a
     rw [←δ_star_eq] at a
     have := nonempty_inter_singleton_imp_in ⟨δ_star tn w, all_in_q tn (δ_star tn w)⟩ (εnfa_to_nfa tn).fs
     have := this a
-    simp at this
-    exact this.2
+    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter] at this
+    apply Exists.elim this
+    intro a h
+    have := h.1.2
+    rw [Subtype.mk_eq_mk] at h
+    rw [←h.2] at this
+    exact this
 
 def εnfa_to_dfa := ToDFA.nfa_to_dfa (εnfa_to_nfa tn)
 

@@ -39,7 +39,7 @@ def δ_star' (q : Finset t.qs) : (w : word t.σs) → Finset t.qs
 
 @[simp]
 def δ_star : (w : word t.σs) → Finset t.qs := δ_star' t {t.init}
-#print axioms Finset.biUnion
+
 -- Whether a word is in the language that the NFA accepts
 @[simp]
 def nfa_accepts (w : word t.σs) : Prop := by
@@ -50,7 +50,7 @@ def nfa_accepts (w : word t.σs) : Prop := by
 theorem nfa_accepts_nil_iff_final : nfa_accepts t [] ↔ t.init ∈ t.fs := by
   apply Iff.intro
   · intro ne
-    dsimp [nfa_accepts, δ_star ] at ne
+    simp only [nfa_accepts, δ_star ] at ne
     apply Finset.nonempty_inter_singleton_imp_in
     exact ne
   · intro e
