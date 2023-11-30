@@ -41,7 +41,7 @@ instance : DecidableEq t.σs := by infer_instance
 instance : DecidableEq t.qs := by infer_instance
 
 -- ToString
-instance instToString[ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (@DFA σ q) where
+instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (@DFA σ q) where
   toString t := by
     have s : List String := (fσ.toList).map toString
     have q : String := toString t.init

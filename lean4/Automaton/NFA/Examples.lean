@@ -7,17 +7,20 @@ import Automaton.NFA.ToDFA
 
 open NFA DFA
 
-def δ₁ : Fin 2 → Fin 2 → Finset (Fin 2)
-  | 0 , 1 => {1}
-  | 0 , 0 => {0}
-  | 1 , 1 => {1}
-  | 1 , 0 => {0}
+def Q : Finset (Fin 2) := {0,1}
+def σ : Finset (Fin 2) := {0,1}
 
-def nfa₁ : NFA (Fin 2) := {q := Fin 2, init := 0 , fs := {1} , δ := δ₁}
+def δ₁ : Q → σ → Finset Q
+  | ⟨0, _⟩ , ⟨1,_⟩ => {⟨1,by simp⟩}
+  | ⟨0, _⟩ , ⟨0,_⟩ => {⟨0,by simp⟩}
+  | ⟨1, _⟩ , ⟨1,_⟩ => {⟨1,by simp⟩}
+  | ⟨1, _⟩ , ⟨0,_⟩ => {⟨0,by simp⟩}
 
-def w₁ : word (Fin 2) := []
-def w₂ : word (Fin 2) := [1 , 0]
-def w₃ : word (Fin 2) := [0 , 1]
+def nfa₁ : @NFA (Fin 2) (Fin 2) := {qs := Q, init := ⟨0,by simp⟩, fs := {⟨1,by simp⟩} , δ := δ₁}
+
+def w₁ : word σ := []
+def w₂ : word σ := [⟨1, by simp⟩ , ⟨0, by simp⟩]
+def w₃ : word σ := [⟨0, by simp⟩ , ⟨1, by simp⟩]
 
 #eval nfa_accepts nfa₁ w₁
 #eval nfa_accepts nfa₁ w₂
@@ -30,25 +33,3 @@ def w₃ : word (Fin 2) := [0 , 1]
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₁
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₂
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₃
-
-#eval minimization_reachable (ToDFA.nfa_to_dfa nfa₁)
-
--- all strings ending with 01
-def δ₂ : Fin 4 → Fin 2 → Finset (Fin 4)
-  | 0 , 0 => {0 , 1}
-  | 0 , 1 => {0}
-  | 1 , 0 => {3}
-  | 1 , 1 => {2}
-  | _ , _ => {3}
-
-def nfa₂ : NFA (Fin 2) := {q := Fin 4, init := 0 , fs := {2} , δ := δ₂}
-
-def w₄ : word (Fin 2) := [0 , 1]
-def w₅ : word (Fin 2) := [1 , 0 , 0 , 1]
-def w₆ : word (Fin 2) := [1 , 0]
-def w₇ : word (Fin 2) := [1 , 1]
-
-#eval nfa_accepts nfa₂ w₄
-#eval nfa_accepts nfa₂ w₅
-#eval nfa_accepts nfa₂ w₆
-#eval nfa_accepts nfa₂ w₇
