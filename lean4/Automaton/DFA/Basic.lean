@@ -230,10 +230,9 @@ theorem accepts_suffix_iff (s : word σs) : (∀ p : word σs,  dfa_accepts t (p
 -- Define whether list forms path between start and finish
 -- The elements (vertices) are joined by edges and each vertex exists at most once
 -- The last element must be the target
-def is_path (a z : qs) (l : List qs) : Prop := by
-  match l with
-  | [] => exact a = z
-  | q :: qs => exact (∃ e : σs , t.δ a e = q) ∧  is_path q z qs ∧ q ∉ qs
+def is_path (a z : qs) : List qs → Prop
+  | [] => a = z
+  | q :: qs => (∃ e : σs , t.δ a e = q) ∧  is_path q z qs ∧ q ∉ qs
 
 
 theorem target_in_path  (l : List qs) : (a b : qs) → is_path t a b l → a ≠ b → b ∈ l := by
