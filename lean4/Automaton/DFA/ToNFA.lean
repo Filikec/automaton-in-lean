@@ -21,10 +21,10 @@ def dfa_δ_to_nfa_δ : qs → σs → Finset qs := λ q e => {td.δ q e}
 
 -- conversion from nfa to dfa
 def dfa_to_nfa : NFA σs qs  := by
-  exact {init := td.init , fs := td.fs , δ := dfa_δ_to_nfa_δ td }
+  exact {s := td.s , fs := td.fs , δ := dfa_δ_to_nfa_δ td }
 
 -- the initial state in NFA is same as in the original DFA
-theorem dfa_to_nfa_eq_init : td.init = (dfa_to_nfa td).init := by simp [dfa_to_nfa]
+theorem dfa_to_nfa_eq_init : td.s = (dfa_to_nfa td).s := by simp [dfa_to_nfa]
 
 -- the final states of the converted dfa are the same
 theorem dfa_to_nfa_eq_final : td.fs = (dfa_to_nfa td).fs := by simp [dfa_to_nfa]
@@ -40,7 +40,7 @@ theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : qs) → {DFA.δ_star' td q 
 
 theorem dfa_to_nfa_eq_δ_star (w : word σs) : {DFA.δ_star td w} = NFA.δ_star (dfa_to_nfa td) w := by
   simp only [DFA.δ_star, NFA.δ_star]
-  have h : (dfa_to_nfa td).init = td.init := by simp [dfa_to_nfa]
+  have h : (dfa_to_nfa td).s = td.s := by simp [dfa_to_nfa]
   rw [h]
   apply dfa_to_nfa_eq_δ_star'
 

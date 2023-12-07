@@ -12,7 +12,7 @@ open NFA Finset DFA
 namespace εNFA
 
 structure εNFA (σs : Finset σ) (qs : Finset q) where
-  init : qs        -- initial state
+  s : qs        -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → Option σs → Finset qs -- transition function
 
@@ -59,7 +59,7 @@ def δ_star' (q : Finset qs) : (word σs) → Finset qs
   | [] => εclosure tn q
   | a :: as => δ_star' (δ_step tn q a) as
 
-def δ_star (w : word σs) : Finset qs := δ_star' tn {tn.init} w
+def δ_star (w : word σs) : Finset qs := δ_star' tn {tn.s} w
 
 def εnfa_accepts (w : word σs) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 
@@ -74,7 +74,7 @@ theorem all_in_q (qs : Finset qs) : qs ∈ εnfa_to_nfa_q := by
   simp [εnfa_to_nfa_q, · ⊆ ·]
 
 @[simp]
-def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn {tn.init} , all_in_q (εclosure tn {tn.init})⟩
+def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn {tn.s} , all_in_q (εclosure tn {tn.s})⟩
 
 @[simp]
 def εnfa_to_nfa_fs : Finset { x // x ∈ @εnfa_to_nfa_q q qs } := by
@@ -91,7 +91,7 @@ def εnfa_to_nfa_δ :  { x // x ∈ @εnfa_to_nfa_q q qs } → σs → Finset { 
 
 @[simp]
 def εnfa_to_nfa : NFA σs (@εnfa_to_nfa_q q qs) :=
-  {init := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
+  {s := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q w) , all_in_q  (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨εclosure tn q , all_in_q _⟩} w := by
   induction w with
@@ -101,7 +101,7 @@ theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q
 
 theorem δ_star_eq (w : word σs) : {⟨εNFA.δ_star tn w , all_in_q  (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]
-  rw [δ_star'_eq tn w {tn.init}]
+  rw [δ_star'_eq tn w {tn.s}]
   simp
 
 theorem εnfa_to_nfa_eq (w : word σs) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by

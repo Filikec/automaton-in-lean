@@ -27,7 +27,7 @@ namespace DFA
 
 
 structure DFA (σs : Finset σ) (qs : Finset q) where
-  init : qs        -- initial state
+  s : qs        -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → σs → qs -- transition function
 
@@ -40,7 +40,7 @@ variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [Decidabl
 instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σs qs) where
   toString t := by
     have s : List String := (fσ.toList).map toString
-    have q : String := toString t.init
+    have q : String := toString t.s
     have qss : List String :=  (fq.toList).map toString
     have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map toString
     have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ qs ∧ b ∈ σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
@@ -60,7 +60,7 @@ def δ_star' (q : qs) : (w : word σs) → qs
   | e :: es => δ_star' (t.δ q e) es
 
 
-def δ_star : (w : word σs) → qs := δ_star' t t.init
+def δ_star : (w : word σs) → qs := δ_star' t t.s
 
 -- whether a DFA accepts a word
 @[simp]
@@ -97,8 +97,8 @@ instance decidableLang (w : word σs) : Decidable (dfa_accepts t w) := by
   apply Finset.decidableMem
 
 
--- dfa accepts nil iff init is final
-theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
+-- dfa accepts nil iff s is final
+theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.s ∈ t.fs := by
   apply Iff.intro
   <;> intro h
   <;> (first | simp [dfa_accepts])
@@ -205,7 +205,7 @@ theorem accepts_prefix_iff (p : word σs) : (∀ s : word σs , dfa_accepts t (p
     apply accepts_prefix_if
     apply h.2
 
-lemma accepts_suffix_if (l r : word σs) : (∀ q : qs , reachable t t.init q → δ_star' t q r ∈ t.fs) → dfa_accepts t (l ++ r) := by
+lemma accepts_suffix_if (l r : word σs) : (∀ q : qs , reachable t t.s q → δ_star' t q r ∈ t.fs) → dfa_accepts t (l ++ r) := by
   intro fa
   simp only [dfa_accepts]
   rw [δ_star_append_eq]
@@ -215,14 +215,14 @@ lemma accepts_suffix_if (l r : word σs) : (∀ q : qs , reachable t t.init q �
 
 -- To prove that DFA always accepts some suffix
 -- If from any reachable state the word is accepted, it is always accepted
-theorem accepts_suffix_iff (s : word σs) : (∀ p : word σs,  dfa_accepts t (p ++ s)) ↔ (∀ q : qs , reachable t t.init q → δ_star' t q s ∈ t.fs) := by
+theorem accepts_suffix_iff (s : word σs) : (∀ p : word σs,  dfa_accepts t (p ++ s)) ↔ (∀ q : qs , reachable t t.s q → δ_star' t q s ∈ t.fs) := by
   apply Iff.intro
   · intro fa q rq
-    have := Iff.mp (state_reachable_iff t t.init q) rq
+    have := Iff.mp (state_reachable_iff t t.s q) rq
     apply Exists.elim this
     intro w δ'
     rw [←δ']
-    have : δ_star' t t.init w = δ_star t w := by simp [δ_star]
+    have : δ_star' t t.s w = δ_star t w := by simp [δ_star]
     rw [this, ←δ_star_append_eq]
     apply fa
   · intro fa w

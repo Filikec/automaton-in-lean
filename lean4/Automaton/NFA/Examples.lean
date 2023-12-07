@@ -17,7 +17,7 @@ def δ₁ : Q₁ → σ₁ → Finset Q₁
   | ⟨1, _⟩ , ⟨1,_⟩ => {⟨1,by simp⟩}
   | ⟨1, _⟩ , ⟨0,_⟩ => {⟨0,by simp⟩}
 
-def nfa₁ : NFA Q₁ σ₁ := {init := ⟨0,by simp⟩, fs := {⟨1,by simp⟩} , δ := δ₁}
+def nfa₁ : NFA Q₁ σ₁ := {s := ⟨0,by simp⟩, fs := {⟨1,by simp⟩} , δ := δ₁}
 
 def w₁₁ : word σ₁ := []
 def w₁₂ : word σ₁ := [⟨1, by simp⟩ , ⟨0, by simp⟩]
@@ -48,7 +48,7 @@ def δ₂ : Q₂ → Option σ₂ → Finset Q₂
   | _ , _ => ∅
 
 -- accepts any number of 0s followed by any number of 1s followed by exactly one 2
-def εnfa₂ : εNFA σ₂ Q₂ := {init := ⟨0,by simp⟩, fs := {⟨3,by simp⟩}, δ := δ₂}
+def εnfa₂ : εNFA σ₂ Q₂ := {s := ⟨0,by simp⟩, fs := {⟨3,by simp⟩}, δ := δ₂}
 
 
 def w₂₁ : word σ₂ := []
@@ -71,5 +71,3 @@ def w₂₆ : word σ₂ := [⟨0,by simp⟩, ⟨0,by simp⟩, ⟨0,by simp⟩, 
 #eval nfa_accepts (εnfa_to_nfa εnfa₂) w₂₄
 #eval nfa_accepts (εnfa_to_nfa εnfa₂) w₂₅
 #eval nfa_accepts (εnfa_to_nfa εnfa₂) w₂₆
-
-

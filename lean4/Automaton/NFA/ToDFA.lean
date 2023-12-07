@@ -22,7 +22,7 @@ theorem all_in_q (q : Finset qs) : q ∈ nfa_to_dfa_q  := by
   simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.init} , all_in_q {tn.init}⟩
+def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.s} , all_in_q {tn.s}⟩
 
 @[simp]
 def nfa_to_dfa_fs : Finset { x // x ∈ @nfa_to_dfa_q q qs } := by
@@ -37,7 +37,7 @@ def nfa_to_dfa_δ : { x // x ∈ @nfa_to_dfa_q q qs } → σs → { x // x ∈ @
   exact ⟨q₁ , all_in_q q₁⟩
 
 def nfa_to_dfa : DFA σs (@nfa_to_dfa_q q qs) :=
-  {init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
+  {s := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
 
 theorem δ_star_eq' : (q : Finset qs) → ⟨(NFA.δ_star' tn q w) , all_in_q  (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q q)⟩  w := by
   induction w with
