@@ -20,9 +20,7 @@ theorem in_nonempty_inter_singleton (e : α) (es : Finset α) : e ∈ es → Fin
   rw [Finset.inter_comm,Finset.inter_singleton_of_mem ein]
   exact Finset.singleton_nonempty e
 
-theorem subtype_of_finset_to_finset {fα : Finset α} : Finset {a  // a ∈ fα} → Finset α := by
-  intro f
-  exact f.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩
+theorem subtype_of_finset_to_finset {fα : Finset α} : Finset {a  // a ∈ fα} → Finset α := fun f => f.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩
 
 def fin_of_subtype_to_subtype_of_subfin {qs : Finset α} (s : Finset { x // x ∈ qs }) : { x // x ⊆ Finset.attach qs } := by
   exact ⟨s , fun x => by simp⟩

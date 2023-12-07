@@ -26,30 +26,26 @@ import Automaton.Fintype.List
 namespace DFA
 
 
-structure DFA {σ : Type _} {q : Type _} where
-  σs : Finset σ    -- alphabet
-  qs : Finset q    -- states
+structure DFA (σs : Finset σ) (qs : Finset q) where
   init : qs        -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → σs → qs -- transition function
-  [dq : DecidableEq q]
-  [dσ : DecidableEq σ]
 
-variable {σ : Type _} {q : Type _} (r s t : @DFA σ q) [DecidableEq σ] [DecidableEq q]
 
-instance : DecidableEq t.σs := by infer_instance
-instance : DecidableEq t.qs := by infer_instance
+variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (r s t : DFA σs qs)
+
+
 
 -- ToString
-instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (@DFA σ q) where
+instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σs qs) where
   toString t := by
     have s : List String := (fσ.toList).map toString
     have q : String := toString t.init
-    have qs : List String :=  (fq.toList).map toString
+    have qss : List String :=  (fq.toList).map toString
     have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map toString
-    have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ t.qs ∧ b ∈ t.σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
+    have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ qs ∧ b ∈ σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
     exact "Σ: { " ++ String.join (s.map (fun e => e++" ")) ++ "}\n" ++
-          "Q: { " ++ String.join (qs.map (fun e => e++" ")) ++ "}\n" ++
+          "Q: { " ++ String.join (qss.map (fun e => e++" ")) ++ "}\n" ++
           "δ: " ++ String.join (δ.map (fun e => "\n   "++e)) ++ "\n" ++
           "q₀: " ++ q ++ "\n" ++
           "F: { " ++ String.join (fs.map (fun e => e++" ")) ++ "}\n"
@@ -59,28 +55,28 @@ instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnu
 -- the state reached after following all transitions given a word
 -- the first letter in list is the last character consumed
 @[simp]
-def δ_star' (q : t.qs) : (w : word t.σs) → t.qs
+def δ_star' (q : qs) : (w : word σs) → qs
   | [] => q
   | e :: es => δ_star' (t.δ q e) es
 
 
-def δ_star : (w : word t.σs) → t.qs := δ_star' t t.init
+def δ_star : (w : word σs) → qs := δ_star' t t.init
 
 -- whether a DFA accepts a word
 @[simp]
-def dfa_accepts : (w : word t.σs) → Prop := by
+def dfa_accepts : (w : word σs) → Prop := by
   intro w
   exact δ_star t w ∈ t.fs
 
-def dfaLang : Lang t.σs := fun w => dfa_accepts t w
+def dfaLang : Lang σs := fun w => dfa_accepts t w
 
 
 -- all states reachable from current state
-inductive reachable (q : t.qs) : t.qs → Prop where
+inductive reachable (q : qs) : qs → Prop where
   | base : reachable q q
-  | step (q' : t.qs) : reachable q q' → ∀ e : t.σs , reachable q (t.δ q' e)
+  | step (q' : qs) : reachable q q' → ∀ e : σs , reachable q (t.δ q' e)
 
-theorem reachable_trans' (a b : t.qs) : reachable t a b → (c : t.qs) → reachable t b c → reachable t a c := by
+theorem reachable_trans' (a b : qs) : reachable t a b → (c : qs) → reachable t b c → reachable t a c := by
   intro h
   induction h with
   | base => intro c ac; exact ac
@@ -90,13 +86,13 @@ theorem reachable_trans' (a b : t.qs) : reachable t a b → (c : t.qs) → reach
                      | base => apply reachable.step; exact reachable.base
                      | step q' _ e' s' => apply reachable.step; exact s'
 
-theorem reachable.trans (a b c : t.qs) : reachable t a b → reachable t b c → reachable t a c := by
+theorem reachable.trans (a b c : qs) : reachable t a b → reachable t b c → reachable t a c := by
   intro a
   apply reachable_trans'
   exact a
 
 -- DFA language is decidable
-instance decidableLang (w : word t.σs) : Decidable (dfa_accepts t w) := by
+instance decidableLang (w : word σs) : Decidable (dfa_accepts t w) := by
   simp only [dfa_accepts]
   apply Finset.decidableMem
 
@@ -108,14 +104,14 @@ theorem dfa_accepts_nil_iff_final : dfa_accepts t [] ↔ t.init ∈ t.fs := by
   <;> (first | simp [dfa_accepts])
   <;> exact h
 
-lemma δ_δ_star'_concat_eq_δ_star' : (q : t.qs) → DFA.δ t (δ_star' t q l) a = δ_star' t q (l ++ [a]) := by
+lemma δ_δ_star'_concat_eq_δ_star' : (q : qs) → DFA.δ t (δ_star' t q l) a = δ_star' t q (l ++ [a]) := by
   induction l with
   | nil => simp
   | cons e es s => intro q
                    simp only [δ_star',List.append_eq]
                    apply s (DFA.δ t q e)
 
-theorem δ_star_append_eq (r : word t.σs) : (l : word t.σs) → δ_star t (l++r) = δ_star' t (δ_star t l) r := by
+theorem δ_star_append_eq (r : word σs) : (l : word σs) → δ_star t (l++r) = δ_star' t (δ_star t l) r := by
   induction r with
   | nil => simp
   | cons a as s => intro l
@@ -124,7 +120,7 @@ theorem δ_star_append_eq (r : word t.σs) : (l : word t.σs) → δ_star t (l++
                    simp [δ_star,δ_δ_star'_concat_eq_δ_star']
 
 
-theorem δ_star'_append_eq (r : word t.σs) (a : t.qs) : (l : word t.σs) → δ_star' t a (l++r) = δ_star' t (δ_star' t a l) r := by
+theorem δ_star'_append_eq (r : word σs) (a : qs) : (l : word σs) → δ_star' t a (l++r) = δ_star' t (δ_star' t a l) r := by
   induction r with
   | nil => simp
   | cons a as s => intro l
@@ -134,7 +130,7 @@ theorem δ_star'_append_eq (r : word t.σs) (a : t.qs) : (l : word t.σs) → δ
 
 
 
-lemma δ_star'_reachable (w : word t.σs) (q : t.qs) : (q' : t.qs) → reachable t q q' → reachable t q (δ_star' t q' w) := by
+lemma δ_star'_reachable (w : word σs) (q : qs) : (q' : qs) → reachable t q q' → reachable t q (δ_star' t q' w) := by
   induction w with
   | nil => simp [δ_star]
   | cons e es s => intro q' rq'
@@ -143,13 +139,13 @@ lemma δ_star'_reachable (w : word t.σs) (q : t.qs) : (q' : t.qs) → reachable
                    apply reachable.step
                    exact rq'
 
-theorem accepts_from_state_if (w : word t.σs) (q : t.qs) : (∀ q' : t.qs , (reachable t q q' → q' ∈ t.fs)) → δ_star' t q w ∈ t.fs := by
+theorem accepts_from_state_if (w : word σs) (q : qs) : (∀ q' : qs , (reachable t q q' → q' ∈ t.fs)) → δ_star' t q w ∈ t.fs := by
   intro q'
   apply q'
   apply δ_star'_reachable
   exact reachable.base
 
-theorem state_reachable_iff (q q' : t.qs) : reachable t q q' ↔ ∃ w : word t.σs , δ_star' t q w = q' := by
+theorem state_reachable_iff (q q' : qs) : reachable t q q' ↔ ∃ w : word σs , δ_star' t q w = q' := by
   apply Iff.intro
   · intro rq'
     induction rq' with
@@ -167,7 +163,7 @@ theorem state_reachable_iff (q q' : t.qs) : reachable t q q' ↔ ∃ w : word t.
     exact reachable.base
 
 
-lemma reachable_δ_star' (w : word t.σs) (q : t.qs) : (q' : t.qs) → reachable t (δ_star' t q' w) q → reachable t q' q := by
+lemma reachable_δ_star' (w : word σs) (q : qs) : (q' : qs) → reachable t (δ_star' t q' w) q → reachable t q' q := by
   match w with
   | [] => simp
   | e::es => intro a r
@@ -179,7 +175,7 @@ lemma reachable_δ_star' (w : word t.σs) (q : t.qs) : (q' : t.qs) → reachable
              exists e :: es ++ w
 
 
-theorem accepts_prefix_if (l r : word t.σs) : (∀ q' : t.qs , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
+theorem accepts_prefix_if (l r : word σs) : (∀ q' : qs , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
   intro fa
   rw [dfa_accepts,δ_star_append_eq]
   apply accepts_from_state_if
@@ -190,7 +186,7 @@ theorem accepts_prefix_if (l r : word t.σs) : (∀ q' : t.qs , (reachable t (δ
 -- To prove that DFA accepts any word starting with a prefix
 -- If after l, a state is reached from which all combinations of transitions lead
 -- to a final state, it always
-theorem accepts_prefix_iff (p : word t.σs) : (∀ s : word t.σs , dfa_accepts t (p ++ s)) ↔ dfa_accepts t p ∧ (∀ q' : t.qs , (reachable t (δ_star t p) q' → q' ∈ t.fs)) := by
+theorem accepts_prefix_iff (p : word σs) : (∀ s : word σs , dfa_accepts t (p ++ s)) ↔ dfa_accepts t p ∧ (∀ q' : qs , (reachable t (δ_star t p) q' → q' ∈ t.fs)) := by
   apply Iff.intro
   · intro h
     simp only [dfa_accepts] at h
@@ -209,7 +205,7 @@ theorem accepts_prefix_iff (p : word t.σs) : (∀ s : word t.σs , dfa_accepts 
     apply accepts_prefix_if
     apply h.2
 
-lemma accepts_suffix_if (l r : word t.σs) : (∀ q : t.qs , reachable t t.init q → δ_star' t q r ∈ t.fs) → dfa_accepts t (l ++ r) := by
+lemma accepts_suffix_if (l r : word σs) : (∀ q : qs , reachable t t.init q → δ_star' t q r ∈ t.fs) → dfa_accepts t (l ++ r) := by
   intro fa
   simp only [dfa_accepts]
   rw [δ_star_append_eq]
@@ -219,7 +215,7 @@ lemma accepts_suffix_if (l r : word t.σs) : (∀ q : t.qs , reachable t t.init 
 
 -- To prove that DFA always accepts some suffix
 -- If from any reachable state the word is accepted, it is always accepted
-theorem accepts_suffix_iff (s : word t.σs) : (∀ p : word t.σs,  dfa_accepts t (p ++ s)) ↔ (∀ q : t.qs , reachable t t.init q → δ_star' t q s ∈ t.fs) := by
+theorem accepts_suffix_iff (s : word σs) : (∀ p : word σs,  dfa_accepts t (p ++ s)) ↔ (∀ q : qs , reachable t t.init q → δ_star' t q s ∈ t.fs) := by
   apply Iff.intro
   · intro fa q rq
     have := Iff.mp (state_reachable_iff t t.init q) rq
@@ -236,13 +232,13 @@ theorem accepts_suffix_iff (s : word t.σs) : (∀ p : word t.σs,  dfa_accepts 
 -- Define whether list forms path between start and finish
 -- The elements (vertices) are joined by edges and each vertex exists at most once
 -- The last element must be the target
-def is_path (a z : t.qs) (l : List t.qs) : Bool := by
+def is_path (a z : qs) (l : List qs) : Bool := by
   match l with
   | [] => exact decide (a = z)
-  | q :: qs => exact decide (∃ e : t.σs , t.δ a e = q) && is_path q z qs && decide (q ∉ qs)
+  | q :: qs => exact decide (∃ e : σs , t.δ a e = q) && is_path q z qs && decide (q ∉ qs)
 
 
-theorem target_in_path  (l : List t.qs) : (a b : t.qs) → is_path t a b l → a ≠ b → b ∈ l := by
+theorem target_in_path  (l : List qs) : (a b : qs) → is_path t a b l → a ≠ b → b ∈ l := by
   induction l with
   | nil => intro a b pab _; simp [is_path] at pab; contradiction
   | cons e es s => intro a b pab _;
@@ -261,7 +257,7 @@ theorem target_in_path  (l : List t.qs) : (a b : t.qs) → is_path t a b l → a
                               rw [d] at h
                               contradiction
 
-lemma all_in_path_reachable (l : List t.qs) : (a b : t.qs) → is_path t a b l → ∀ q : t.qs, q ∈ l → reachable t a q := by
+lemma all_in_path_reachable (l : List qs) : (a b : qs) → is_path t a b l → ∀ q : qs, q ∈ l → reachable t a q := by
   induction l with
   | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b p q qinees
@@ -315,7 +311,7 @@ def nin_list_nin_list_until {α : Type _} [DecidableEq α] (a : α) (l : List α
                         · exact ain
 
 
-lemma path_if_list_until (l : List t.qs) : (a b : t.qs) → is_path t a b l → ∀ q : t.qs, q ∈ l → is_path t a q (list_until q l) := by
+lemma path_if_list_until (l : List qs) : (a b : qs) → is_path t a b l → ∀ q : qs, q ∈ l → is_path t a q (list_until q l) := by
   induction l with
   | nil => intro a b _ q qin; contradiction
   | cons e es s => intro a b pab q qin
@@ -346,7 +342,7 @@ lemma path_if_list_until (l : List t.qs) : (a b : t.qs) → is_path t a b l → 
                        exact pab.2
 
 
-lemma all_in_path_path (l : List t.qs) : (a b : t.qs) → is_path t a b l → ∀ q : t.qs, q ∈ l → ∃ l₁ : List t.qs, is_path t a q l₁ := by
+lemma all_in_path_path (l : List qs) : (a b : qs) → is_path t a b l → ∀ q : qs, q ∈ l → ∃ l₁ : List qs, is_path t a q l₁ := by
   match l with
   | [] => intro a b _ q qin; contradiction
   | e::es => intro a b p q qin
@@ -356,7 +352,7 @@ lemma all_in_path_path (l : List t.qs) : (a b : t.qs) → is_path t a b l → �
              · exact qin
 
 
-lemma path_concat (l : List t.qs) : (a b c : t.qs) → is_path t a b l → (∃ e : t.σs, t.δ b e = c) → c ∉ l → is_path t a c (l.concat c) := by
+lemma path_concat (l : List qs) : (a b c : qs) → is_path t a b l → (∃ e : σs, t.δ b e = c) → c ∉ l → is_path t a c (l.concat c) := by
   induction l with
   | nil => intro a b c p ex cin
            simp only [is_path]
@@ -392,7 +388,7 @@ lemma path_concat (l : List t.qs) : (a b c : t.qs) → is_path t a b l → (∃ 
                        have := Eq.symm this
                        contradiction
 
-theorem reachable_iff_ex_path (a b : t.qs) : reachable t a b ↔ ∃ l : List t.qs , is_path t a b l := by
+theorem reachable_iff_ex_path (a b : qs) : reachable t a b ↔ ∃ l : List qs , is_path t a b l := by
   apply Iff.intro
   . intro r
     induction r with
@@ -424,7 +420,7 @@ theorem reachable_iff_ex_path (a b : t.qs) : reachable t a b ↔ ∃ l : List t.
 
 
 
-theorem path_nodup (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.Nodup := by
+theorem path_nodup (l : List qs) : (a b : qs) → is_path t a b l → l.Nodup := by
   induction l with
   | nil => simp
   | cons e es s => intro a b h
@@ -436,13 +432,13 @@ theorem path_nodup (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.Nodu
                    · apply s
                      · exact h.1.2
 
-lemma path_finset_subset (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.toFinset ⊆ t.qs.attach := by
+lemma path_finset_subset (l : List qs) : (a b : qs) → is_path t a b l → l.toFinset ⊆ qs.attach := by
   intro a b _
   simp only [· ⊆ · ]
   intro e _
   apply Finset.mem_attach
 
-theorem path_le_size (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.length ≤ t.qs.card := by
+theorem path_le_size (l : List qs) : (a b : qs) → is_path t a b l → l.length ≤ qs.card := by
   intro a b pab
   rw [←Finset.card_attach,←List.toFinset_card_of_nodup]
   apply Finset.card_le_of_subset
@@ -452,7 +448,7 @@ theorem path_le_size (l : List t.qs) : (a b : t.qs) → is_path t a b l → l.le
   exact pab
 
 
-theorem w_le_card_if_ex_w  (p : word t.qs) : (a b : t.qs) → is_path t a b p → (∃ w : word t.σs, δ_star' t a w = b ∧ w.length = p.length) := by
+theorem w_le_card_if_ex_w  (p : word qs) : (a b : qs) → is_path t a b p → (∃ w : word σs, δ_star' t a w = b ∧ w.length = p.length) := by
   induction p with
   | nil => intro a b p
            exists []
@@ -477,7 +473,7 @@ theorem w_le_card_if_ex_w  (p : word t.qs) : (a b : t.qs) → is_path t a b p �
                    · rfl
 
 
-theorem ex_w_iff_ex_w_le_card (a b : t.qs) : (∃ w : word t.σs, δ_star' t a w = b) ↔ (∃ w : word t.σs, δ_star' t a w = b ∧ w.length <= t.qs.card) := by
+theorem ex_w_iff_ex_w_le_card (a b : qs) : (∃ w : word σs, δ_star' t a w = b) ↔ (∃ w : word σs, δ_star' t a w = b ∧ w.length <= qs.card) := by
   apply Iff.intro
   · intro ex
     have := (state_reachable_iff t a b).mpr ex
@@ -499,7 +495,7 @@ theorem ex_w_iff_ex_w_le_card (a b : t.qs) : (∃ w : word t.σs, δ_star' t a w
     exists w
     exact h.1
 
-instance DecidableExW {P : word t.σs → Prop} [f : Fintype {x : word t.σs // x.length <= t.qs.card}] [DecidablePred P] : Decidable (∃ w : {x : word t.σs // x.length <= t.qs.card}, P w ) := by
+instance DecidableExW {P : word σs → Prop} [f : Fintype {x : word σs // x.length <= qs.card}] [DecidablePred P] : Decidable (∃ w : {x : word σs // x.length <= qs.card}, P w ) := by
   have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => P l) l) := Finset.decidableExistsAndFinset
   match h with
   | isTrue t => apply isTrue
@@ -517,9 +513,9 @@ instance DecidableExW {P : word t.σs → Prop} [f : Fintype {x : word t.σs // 
                  · apply f.complete
                  · exact h
 
-instance DecidableIsPath : (a b : t.qs) → Decidable (∃ l : List t.qs, is_path t a b l) := by
+instance DecidableIsPath : (a b : qs) → Decidable (∃ l : List qs, is_path t a b l) := by
   intro a b
-  have f : Fintype {p : List t.qs // p.Nodup} := fintypeNodupList
+  have f : Fintype {p : List qs // p.Nodup} := fintypeNodupList
   have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => is_path t a b l) l) := Finset.decidableExistsAndFinset
   match h with
   | isTrue t => apply isTrue
@@ -540,11 +536,11 @@ instance DecidableIsPath : (a b : t.qs) → Decidable (∃ l : List t.qs, is_pat
 
 instance DecidableReachable : DecidableRel (reachable t) := by
   intro a b
-  apply decidable_of_iff (∃ l : List t.qs, is_path t a b l)
+  apply decidable_of_iff (∃ l : List qs, is_path t a b l)
   apply Iff.symm
   apply reachable_iff_ex_path
 
-instance Decidable_ex_δ_star' : Decidable (∃ w : word t.σs, δ_star' t a w = b) := by
+instance Decidable_ex_δ_star' : Decidable (∃ w : word σs, δ_star' t a w = b) := by
   apply decidable_of_iff (reachable t a b)
   exact (state_reachable_iff t a b)
 

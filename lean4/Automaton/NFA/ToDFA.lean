@@ -12,43 +12,43 @@ open NFA DFA Finset
 
 namespace ToDFA
 
-variable {σ : Type _} {q : Type _} [DecidableEq σ] [DecidableEq q] (r s tn : @NFA σ q)
+variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (r s tn : NFA σs qs) [DecidableEq σ] [DecidableEq q]
 
 @[simp]
-def nfa_to_dfa_q : Finset (Finset tn.qs) := tn.qs.attach.powerset
+def nfa_to_dfa_q : Finset (Finset qs) := qs.attach.powerset
 
 @[simp]
-theorem all_in_q (q : Finset tn.qs) : q ∈ nfa_to_dfa_q tn := by
+theorem all_in_q (q : Finset qs) : q ∈ nfa_to_dfa_q  := by
   simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ nfa_to_dfa_q tn } := ⟨{tn.init} , all_in_q tn {tn.init}⟩
+def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.init} , all_in_q {tn.init}⟩
 
 @[simp]
-def nfa_to_dfa_fs : Finset { x // x ∈ nfa_to_dfa_q tn } := by
-  have fs := (nfa_to_dfa_q tn).filter (fun q => (q ∩ tn.fs).Nonempty)
+def nfa_to_dfa_fs : Finset { x // x ∈ @nfa_to_dfa_q q qs } := by
+  have fs := nfa_to_dfa_q.filter (fun q => (q ∩ tn.fs).Nonempty)
   apply fs.biUnion
   intro q
-  exact {⟨q , all_in_q tn q⟩}
+  exact {⟨q , all_in_q  q⟩}
 
-def nfa_to_dfa_δ : { x // x ∈ nfa_to_dfa_q tn } → tn.σs → { x // x ∈ nfa_to_dfa_q tn } := by
+def nfa_to_dfa_δ : { x // x ∈ @nfa_to_dfa_q q qs } → σs → { x // x ∈ @nfa_to_dfa_q q qs } := by
   intro q e
-  have q₁ : Finset tn.qs := q.1.biUnion (fun q => tn.δ q e)
-  exact ⟨q₁ , all_in_q tn q₁⟩
+  have q₁ : Finset qs := q.1.biUnion (fun q => tn.δ q e)
+  exact ⟨q₁ , all_in_q q₁⟩
 
-def nfa_to_dfa : @DFA σ (Finset {x // x ∈ tn.qs}) :=
-  {qs := nfa_to_dfa_q tn, σs := tn.σs,  init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
+def nfa_to_dfa : DFA σs (@nfa_to_dfa_q q qs) :=
+  {init := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
 
-theorem δ_star_eq' : (q : Finset tn.qs) → ⟨(NFA.δ_star' tn q w) , all_in_q tn (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q tn q)⟩  w := by
+theorem δ_star_eq' : (q : Finset qs) → ⟨(NFA.δ_star' tn q w) , all_in_q  (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q q)⟩  w := by
   induction w with
   | nil => simp [NFA.δ_star,DFA.δ_star,nfa_to_dfa]
   | cons a as s => intro q
                    simp [NFA.δ_star,DFA.δ_star,s,nfa_to_dfa,nfa_to_dfa_δ,δ_step]
 
-theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q tn (NFA.δ_star tn w)⟩ = DFA.δ_star (nfa_to_dfa tn) w := by
+theorem δ_star_eq : ⟨(NFA.δ_star tn w) , all_in_q (NFA.δ_star tn w)⟩ = DFA.δ_star (nfa_to_dfa tn) w := by
   apply δ_star_eq'
 
-theorem nfa_to_dfa_eq (w : word tn.σs) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
+theorem nfa_to_dfa_eq (w : word σs) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_dfa tn) w := by
   simp only [nfa_accepts,dfa_accepts]
   apply Iff.intro
   · intro a
