@@ -15,19 +15,8 @@ namespace ToNFA
 
 variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (r s td : DFA σs qs)
 
-
--- to convert into nfa δ, just create singleton for each state
-def dfa_δ_to_nfa_δ : qs → σs → Finset qs := λ q e => {td.δ q e}
-
 -- conversion from nfa to dfa
-def dfa_to_nfa : NFA σs qs  := by
-  exact {s := td.s , fs := td.fs , δ := dfa_δ_to_nfa_δ td }
-
--- the initial state in NFA is same as in the original DFA
-theorem dfa_to_nfa_eq_init : td.s = (dfa_to_nfa td).s := by simp [dfa_to_nfa]
-
--- the final states of the converted dfa are the same
-theorem dfa_to_nfa_eq_final : td.fs = (dfa_to_nfa td).fs := by simp [dfa_to_nfa]
+def dfa_to_nfa : NFA σs qs := {s := td.s , fs := td.fs , δ := fun q e => {td.δ q e} }
 
 -- the δ_star function remains the same (but NFA produces singletons)
 theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : qs) → {DFA.δ_star' td q w} = NFA.δ_star' (dfa_to_nfa td) {q} w := by
@@ -36,7 +25,7 @@ theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : qs) → {DFA.δ_star' td q 
   | cons a as h => intro q
                    simp only [DFA.δ_star,NFA.δ_star,DFA.δ_star']
                    rw [h]
-                   simp [δ_step,dfa_to_nfa,dfa_δ_to_nfa_δ]
+                   simp [δ_step,dfa_to_nfa]
 
 theorem dfa_to_nfa_eq_δ_star (w : word σs) : {DFA.δ_star td w} = NFA.δ_star (dfa_to_nfa td) w := by
   simp only [DFA.δ_star, NFA.δ_star]
@@ -46,16 +35,13 @@ theorem dfa_to_nfa_eq_δ_star (w : word σs) : {DFA.δ_star td w} = NFA.δ_star 
 
 -- converted dfa accepts the same language as the original dfa
 theorem dfa_to_nfa_eq : dfa_accepts td w ↔ nfa_accepts (dfa_to_nfa td) w := by
-  simp only [dfa_accepts,nfa_accepts,DFA.δ_star,NFA.δ_star]
+  simp only [dfa_accepts,nfa_accepts]
+  rw [←dfa_to_nfa_eq_δ_star]
   apply Iff.intro
   · intro h
-    rw [←(dfa_to_nfa_eq_δ_star' td w)]
-    simp only [dfa_to_nfa]
     apply Finset.in_nonempty_inter_singleton
     exact h
   · intro h
-    rw [←(dfa_to_nfa_eq_δ_star' td w)] at h
-    simp only [dfa_to_nfa]
     apply Finset.nonempty_inter_singleton_imp_in
     exact h
 

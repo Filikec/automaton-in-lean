@@ -27,7 +27,7 @@ namespace DFA
 
 
 structure DFA (σs : Finset σ) (qs : Finset q) where
-  s : qs        -- initial state
+  s : qs           -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → σs → qs -- transition function
 
@@ -64,9 +64,7 @@ def δ_star : (w : word σs) → qs := δ_star' t t.s
 
 -- whether a DFA accepts a word
 @[simp]
-def dfa_accepts : (w : word σs) → Prop := by
-  intro w
-  exact δ_star t w ∈ t.fs
+def dfa_accepts : (w : word σs) → Prop := fun w => δ_star t w ∈ t.fs
 
 def dfaLang : Lang σs := fun w => dfa_accepts t w
 

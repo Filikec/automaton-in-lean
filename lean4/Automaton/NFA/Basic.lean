@@ -12,8 +12,8 @@ import Mathlib.Data.FinEnum
 namespace NFA
 
 structure NFA (σs : Finset σ) (qs : Finset q) where
-  s : qs        -- initial state
-  fs : Finset qs   -- accepting states
+  s : qs                  -- initial state
+  fs : Finset qs          -- accepting states
   δ : qs → σs → Finset qs -- transition function
 
 
