@@ -14,30 +14,30 @@ def minimization_reachable_q (t : DFA σs qs) : Finset qs := qs.attach.filter (f
 
 @[simp]
 def minimization_reachable_init (t : DFA σs qs) : { x // x ∈ minimization_reachable_q t } := by
-  exact ⟨t.s , by simp [finenum_to_finset]; exact reachable.base⟩
+  exact ⟨t.s , by simp only [minimization_reachable_q,Finset.mem_filter]; exact ⟨by simp,reachable.base⟩⟩
 
 @[simp]
-def minimization_reachable_fs (t : DFA σs qs) : Finset {x // x ∈ minimization_reachable_q t} := by
-  have := Finset.attach (minimization_reachable_q t)
-  exact this.filter (fun q => q.1 ∈ t.fs)
+def minimization_reachable_fs (t : DFA σs qs) : Finset {x // x ∈ minimization_reachable_q t} :=
+  (minimization_reachable_q t).attach.filter (fun q => q.1 ∈ t.fs)
 
 @[simp]
 def minimization_reachable_δ (t : DFA σs qs) : { x // x ∈ minimization_reachable_q t } → σs → { x // x ∈ minimization_reachable_q t } := by
   intro q e
   have := q.2
-  simp [finenum_to_finset] at this
-  exact ⟨ t.δ q e, by simp [finenum_to_finset]; apply reachable.step; exact this⟩
+  simp at this
+  exact ⟨ t.δ q e, by simp; apply reachable.step; exact this⟩
 
 def minimization_reachable (t : DFA σs qs) : DFA σs (minimization_reachable_q t) :=
   {s := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
 
-lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : qs) → (r : reachable t t.s q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [finenum_to_finset, minimization_reachable]; exact r⟩  w).1 := by
+lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : qs) → (r : reachable t t.s q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
   induction w with
   | nil => simp
   | cons a as s => simp only [δ_star']
                    intro q r
                    rw [s]
-                   simp [minimization_reachable]
+                   apply congrFun
+                   · exact rfl
                    apply reachable.step
                    exact r
 
@@ -52,8 +52,8 @@ theorem minimization_reachable_eq {w : word σs} : dfa_accepts t w ↔ dfa_accep
     simp only [dfa_accepts] at dfa
     simp only [dfa_accepts]
     rw [minimization_reachable_δ_star_eq] at dfa
-    simp [minimization_reachable] at dfa
-    simp [minimization_reachable]
+    simp only [minimization_reachable] at dfa
+    simp only [minimization_reachable,minimization_reachable_fs]
     apply Finset.mem_filter.mpr
     apply And.intro
     · simp
@@ -62,8 +62,8 @@ theorem minimization_reachable_eq {w : word σs} : dfa_accepts t w ↔ dfa_accep
     simp only [dfa_accepts] at dfa
     simp only [dfa_accepts]
     rw [minimization_reachable_δ_star_eq]
-    simp [minimization_reachable] at dfa
-    simp [minimization_reachable]
+    simp only [minimization_reachable] at dfa
+    simp only [minimization_reachable]
     have := Finset.mem_filter.mp dfa
     exact this.2
 
@@ -213,12 +213,12 @@ lemma table_aux_decreasing : ¬card (step t c all_pairs) = card c → c ⊆ all_
   · apply Finset.card_lt_card
     exact d
 
-def table_aux (c : Finset (qs × qs)) (h : c ⊆ all_pairs) : Finset (qs × qs) := by
-  if (step t c all_pairs).card = c.card then exact c else exact table_aux (step t c all_pairs) (by simp only [step]
-                                                                                                   apply Finset.union_subset_iff.mpr
-                                                                                                   apply And.intro
-                                                                                                   · exact h
-                                                                                                   · simp)
+def table_aux (c : Finset (qs × qs)) (h : c ⊆ all_pairs) : Finset (qs × qs) :=
+  if (step t c all_pairs).card = c.card then c else  table_aux (step t c all_pairs) (by simp only [step]
+                                                                                        apply Finset.union_subset_iff.mpr
+                                                                                        apply And.intro
+                                                                                        · exact h
+                                                                                        · simp)
 termination_by table_aux c h => (@all_pairs q qs).card - c.card
 decreasing_by apply table_aux_decreasing t (by assumption) (by assumption)
 
