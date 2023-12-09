@@ -16,7 +16,7 @@ namespace ToNFA
 variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (r s td : DFA σs qs)
 
 -- conversion from nfa to dfa
-def dfa_to_nfa : NFA σs qs := {s := td.s , fs := td.fs , δ := fun q e => {td.δ q e} }
+def dfa_to_nfa : NFA σs qs := {q₀ := td.q₀ , fs := td.fs , δ := fun q e => {td.δ q e} }
 
 -- the δ_star function remains the same (but NFA produces singletons)
 theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : qs) → {DFA.δ_star' td q w} = NFA.δ_star' (dfa_to_nfa td) {q} w := by
@@ -25,12 +25,10 @@ theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : qs) → {DFA.δ_star' td q 
   | cons a as h => intro q
                    simp only [DFA.δ_star,NFA.δ_star,DFA.δ_star']
                    rw [h]
-                   simp [δ_step,dfa_to_nfa]
+                   simp [dfa_to_nfa]
 
 theorem dfa_to_nfa_eq_δ_star (w : word σs) : {DFA.δ_star td w} = NFA.δ_star (dfa_to_nfa td) w := by
-  simp only [DFA.δ_star, NFA.δ_star]
-  have h : (dfa_to_nfa td).s = td.s := by simp [dfa_to_nfa]
-  rw [h]
+  simp only [DFA.δ_star, NFA.δ_star,dfa_to_nfa]
   apply dfa_to_nfa_eq_δ_star'
 
 -- converted dfa accepts the same language as the original dfa

@@ -10,11 +10,11 @@ namespace DFA
 variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (r s t : DFA σs qs)
 
 @[simp]
-def minimization_reachable_q (t : DFA σs qs) : Finset qs := qs.attach.filter (fun q => reachable t t.s q)
+def minimization_reachable_q (t : DFA σs qs) : Finset qs := qs.attach.filter (fun q => reachable t t.q₀ q)
 
 @[simp]
 def minimization_reachable_init (t : DFA σs qs) : { x // x ∈ minimization_reachable_q t } := by
-  exact ⟨t.s , by simp only [minimization_reachable_q,Finset.mem_filter]; exact ⟨by simp,reachable.base⟩⟩
+  exact ⟨t.q₀ , by simp only [minimization_reachable_q,Finset.mem_filter]; exact ⟨by simp,reachable.base⟩⟩
 
 @[simp]
 def minimization_reachable_fs (t : DFA σs qs) : Finset {x // x ∈ minimization_reachable_q t} :=
@@ -28,9 +28,9 @@ def minimization_reachable_δ (t : DFA σs qs) : { x // x ∈ minimization_reach
   exact ⟨ t.δ q e, by simp; apply reachable.step; exact this⟩
 
 def minimization_reachable (t : DFA σs qs) : DFA σs (minimization_reachable_q t) :=
-  {s := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
+  {q₀ := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
 
-lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : qs) → (r : reachable t t.s q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
+lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : qs) → (r : reachable t t.q₀ q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
   induction w with
   | nil => simp
   | cons a as s => simp only [δ_star']
@@ -371,7 +371,7 @@ def min_q : Finset (Finset qs) := qs.attach.biUnion (fun q => {qs.attach.filter 
 
 def min_init : { x // x ∈ min_q t } := by
   simp only [min_q]
-  exact ⟨qs.attach.filter (fun q => nondistinct t q t.s), by rw [Finset.mem_biUnion]; exists t.s; rw [Finset.mem_singleton]; exact ⟨by simp, rfl⟩⟩
+  exact ⟨qs.attach.filter (fun q => nondistinct t q t.q₀), by rw [Finset.mem_biUnion]; exists t.q₀; rw [Finset.mem_singleton]; exact ⟨by simp, rfl⟩⟩
 
 def min_fs : Finset { x // x ∈ min_q t } := (min_q t).attach.filter (fun f => ∃ q : qs, q ∈ f.1 ∧ q ∈ t.fs)
 
@@ -416,7 +416,7 @@ def min_δ : { x // x ∈ min_q t } → { x // x ∈ σs } → { x // x ∈ min_
   let b := a.1.biUnion (fun a => (qs.attach).filter (fun b => nondistinct t b (t.δ a e)))
   exact ⟨b , min_δ_step_in t a⟩
 
-def min_dfa : DFA σs (min_q t) := {s := min_init t, fs := min_fs t, δ := min_δ t}
+def min_dfa : DFA σs (min_q t) := {q₀ := min_init t, fs := min_fs t, δ := min_δ t}
 
 def state_eq_class (a : qs) : { x // x ∈ (min_q t) } := ⟨qs.attach.filter (fun q => nondistinct t q a), by simp [min_dfa,min_q]; exists a; exists (by simp)⟩
 
@@ -493,7 +493,7 @@ theorem min_min_eq {w : word σs} : dfa_accepts t w ↔ dfa_accepts (min_dfa (mi
     apply (min_reachable_min_eq t).mpr
     exact d
 
-theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.s q)) ↔ (minimization_reachable_q t).card < qs.card := by
+theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.q₀ q)) ↔ (minimization_reachable_q t).card < qs.card := by
   apply Iff.intro
   · intro ex
     apply Exists.elim ex
@@ -528,7 +528,7 @@ theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.s q)) ↔ 
     apply nin
     apply Finset.mem_attach
 
-theorem all_rechable_or : (∀ q : qs, reachable t t.s q) → ∀ q : qs, q = t.s ∨ ∃ q₂ : qs, ∃ s : σs, t.δ q₂ s = q := by
+theorem all_rechable_or : (∀ q : qs, reachable t t.q₀ q) → ∀ q : qs, q = t.q₀ ∨ ∃ q₂ : qs, ∃ s : σs, t.δ q₂ s = q := by
   intro fa
   intro q
   have := fa q

@@ -47,7 +47,6 @@ theorem filter_eq_filter {α : Type _} [DecidableEq α] (f : Finset α) (P A : �
                                                                                                        assumption
                                                                                       contradiction
                                                                                     · rfl
-
                    rw [this]
 
 theorem mem_iff_insert_mem_iff_sdiff {α : Type _} [DecidableEq α] {a : α} {fa fb : Finset α} (h₁ : a ∉ fa) (h₂ : ∀ e, e ∈ insert a fa ↔ e ∈ fb) : (∀ e , e ∈ fa ↔ e ∈ (fb \ {a})) := by

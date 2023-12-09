@@ -12,13 +12,12 @@ open NFA Finset DFA
 namespace εNFA
 
 structure εNFA (σs : Finset σ) (qs : Finset q) where
-  s : qs        -- initial state
+  q₀ : qs        -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → Option σs → Finset qs -- transition function
 
 
 variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (r s tn : εNFA σs qs) [DecidableEq σ] [DecidableEq q]
-
 
 def εclosure (f : Finset qs) : Finset qs := by
   let newF := f.biUnion (fun q => tn.δ q none) ∪ f
@@ -59,7 +58,7 @@ def δ_star' (q : Finset qs) : (word σs) → Finset qs
   | [] => εclosure tn q
   | a :: as => δ_star' (δ_step tn q a) as
 
-def δ_star (w : word σs) : Finset qs := δ_star' tn {tn.s} w
+def δ_star (w : word σs) : Finset qs := δ_star' tn {tn.q₀} w
 
 def εnfa_accepts (w : word σs) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 
@@ -74,7 +73,7 @@ theorem all_in_q (qs : Finset qs) : qs ∈ εnfa_to_nfa_q := by
   simp [εnfa_to_nfa_q, · ⊆ ·]
 
 @[simp]
-def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn {tn.s} , all_in_q (εclosure tn {tn.s})⟩
+def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn {tn.q₀} , all_in_q (εclosure tn {tn.q₀})⟩
 
 @[simp]
 def εnfa_to_nfa_fs : Finset { x // x ∈ @εnfa_to_nfa_q q qs } := by
@@ -91,7 +90,7 @@ def εnfa_to_nfa_δ :  { x // x ∈ @εnfa_to_nfa_q q qs } → σs → Finset { 
 
 @[simp]
 def εnfa_to_nfa : NFA σs (@εnfa_to_nfa_q q qs) :=
-  {s := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
+  {q₀ := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q w) , all_in_q  (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨εclosure tn q , all_in_q _⟩} w := by
   induction w with
@@ -101,7 +100,7 @@ theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q
 
 theorem δ_star_eq (w : word σs) : {⟨εNFA.δ_star tn w , all_in_q  (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]
-  rw [δ_star'_eq tn w {tn.s}]
+  rw [δ_star'_eq tn w {tn.q₀}]
   simp
 
 theorem εnfa_to_nfa_eq (w : word σs) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
@@ -110,22 +109,21 @@ theorem εnfa_to_nfa_eq (w : word σs) : εnfa_accepts tn w ↔ nfa_accepts (εn
   · intro a
     rw [←δ_star_eq]
     apply in_nonempty_inter_singleton
-    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter]
+    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter,Subtype.mk_eq_mk]
     exists δ_star tn w
     apply And.intro
-    · exact ⟨by simp [εnfa_to_nfa_q,δ_star,· ⊆ ·], a⟩
+    · exact ⟨by apply all_in_q, a⟩
     · simp [δ_star]
   . intro a
     rw [←δ_star_eq] at a
     have := nonempty_inter_singleton_imp_in ⟨δ_star tn w, all_in_q (δ_star tn w)⟩ (εnfa_to_nfa tn).fs
     have := this a
-    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter] at this
+    simp only [δ_star,εnfa_to_nfa,εnfa_to_nfa_fs,Finset.mem_biUnion,Finset.mem_singleton,Finset.mem_filter,Subtype.mk_eq_mk] at this
     apply Exists.elim this
     intro a h
-    have := h.1.2
-    rw [Subtype.mk_eq_mk] at h
-    rw [←h.2] at this
-    exact this
+    simp only [δ_star]
+    rw [h.2]
+    exact h.1.2
 
 def εnfa_to_dfa := ToDFA.nfa_to_dfa (εnfa_to_nfa tn)
 

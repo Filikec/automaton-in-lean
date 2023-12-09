@@ -19,25 +19,22 @@ def nfa_to_dfa_q : Finset (Finset qs) := qs.attach.powerset
 
 @[simp]
 theorem all_in_q (q : Finset qs) : q ∈ nfa_to_dfa_q  := by
-  simp [nfa_to_dfa_q,finenum_to_finset, · ⊆ ·]
+  simp [nfa_to_dfa_q, · ⊆ ·]
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.s} , all_in_q {tn.s}⟩
+def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.q₀} , all_in_q {tn.q₀}⟩
 
 @[simp]
-def nfa_to_dfa_fs : Finset { x // x ∈ @nfa_to_dfa_q q qs } := by
-  have fs := nfa_to_dfa_q.filter (fun q => (q ∩ tn.fs).Nonempty)
-  apply fs.biUnion
-  intro q
-  exact {⟨q , all_in_q  q⟩}
+def nfa_to_dfa_fs : Finset { x // x ∈ @nfa_to_dfa_q q qs } :=
+  (nfa_to_dfa_q.filter (fun q => (q ∩ tn.fs).Nonempty)).map  ⟨(fun q => ⟨q , all_in_q  q⟩), by simp [Function.Injective]⟩
+
 
 def nfa_to_dfa_δ : { x // x ∈ @nfa_to_dfa_q q qs } → σs → { x // x ∈ @nfa_to_dfa_q q qs } := by
   intro q e
-  have q₁ : Finset qs := q.1.biUnion (fun q => tn.δ q e)
-  exact ⟨q₁ , all_in_q q₁⟩
+  exact ⟨q.1.biUnion (fun q => tn.δ q e) , all_in_q _⟩
 
 def nfa_to_dfa : DFA σs (@nfa_to_dfa_q q qs) :=
-  {s := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
+  {q₀ := nfa_to_dfa_init tn, fs := nfa_to_dfa_fs tn , δ := nfa_to_dfa_δ tn}
 
 theorem δ_star_eq' : (q : Finset qs) → ⟨(NFA.δ_star' tn q w) , all_in_q  (NFA.δ_star' tn q w)⟩ = DFA.δ_star' (nfa_to_dfa tn) ⟨ q , (all_in_q q)⟩  w := by
   induction w with
@@ -55,7 +52,7 @@ theorem nfa_to_dfa_eq (w : word σs) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_
     rw [←δ_star_eq]
     simp [nfa_to_dfa]
     apply And.intro
-    · simp [finenum_to_finset,·⊆·]
+    · simp [·⊆·]
     · exact a
   · intro a
     rw [←δ_star_eq] at a
