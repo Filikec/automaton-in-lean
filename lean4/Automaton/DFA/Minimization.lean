@@ -336,7 +336,7 @@ lemma table_filling_if_exists (w : word σs) : (a b : qs) → ¬(δ_star' t a w 
                      apply if_δ_in_table_aux_in_table_aux
                      exact δ
 
-theorem forall_step_exists_word (a b : qs) : distinct_table_filling t a b ↔ ∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
+theorem table_filling_iff_ex (a b : qs) : distinct_table_filling t a b ↔ ∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   apply Iff.intro
   · intro d
     simp only [distinct_table_filling] at d
@@ -354,7 +354,7 @@ theorem forall_step_exists_word (a b : qs) : distinct_table_filling t a b ↔ �
 
 instance instDecExW : Decidable (∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs)) := by
   apply decidable_of_iff (distinct_table_filling t a b)
-  exact forall_step_exists_word t a b
+  exact table_filling_iff_ex t a b
 
 instance instDecDistinct : Decidable (distinct t a b) := by
   apply decidable_of_iff (∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs))

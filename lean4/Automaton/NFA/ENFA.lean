@@ -12,8 +12,8 @@ open NFA Finset DFA
 namespace εNFA
 
 structure εNFA (σs : Finset σ) (qs : Finset q) where
-  q₀ : qs        -- initial state
-  fs : Finset qs   -- accepting states
+  q₀ : qs                        -- initial state
+  fs : Finset qs                 -- accepting states
   δ : qs → Option σs → Finset qs -- transition function
 
 

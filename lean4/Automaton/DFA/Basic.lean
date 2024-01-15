@@ -69,7 +69,7 @@ def dfa_accepts : (w : word σs) → Prop := fun w => δ_star t w ∈ t.fs
 def dfaLang : Lang σs := fun w => dfa_accepts t w
 
 
--- all states reachable from current state
+-- state is reachable from the given state
 inductive reachable (q : qs) : qs → Prop where
   | base : reachable q q
   | step (q' : qs) : reachable q q' → ∀ e : σs , reachable q (t.δ q' e)

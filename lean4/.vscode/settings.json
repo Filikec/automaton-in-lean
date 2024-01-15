@@ -6,6 +6,8 @@
         "cstdlib": "cpp",
         "istream": "cpp",
         "string": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "algorithm": "cpp",
+        "utility": "cpp"
     }
 }

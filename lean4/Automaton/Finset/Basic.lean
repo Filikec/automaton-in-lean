@@ -121,7 +121,5 @@ theorem eq_iff_fa_mem {fa fb : Finset α} : fa = fb ↔ ∀ a : α, a ∈ fa ↔
   · apply eq_mem_iff_mem
   · apply mem_iff_mem_eq
 
-def finenum_to_finset (α : Type _) [FinEnum α] : Finset α := (FinEnum.toList α).toFinset
-
 
 end Finset
