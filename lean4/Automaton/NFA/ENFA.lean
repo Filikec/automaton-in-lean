@@ -12,12 +12,12 @@ open NFA Finset DFA
 namespace εNFA
 
 structure εNFA (σs : Finset σ) (qs : Finset q) where
-  q₀ : qs                        -- initial state
+  q₀ : Finset qs                 -- initial state
   fs : Finset qs                 -- accepting states
   δ : qs → Option σs → Finset qs -- transition function
 
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (r s tn : εNFA σs qs) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (tn : εNFA σs qs) [DecidableEq σ] [DecidableEq q]
 
 def εclosure (f : Finset qs) : Finset qs := by
   let newF := f.biUnion (fun q => tn.δ q none) ∪ f
@@ -50,6 +50,56 @@ decreasing_by simp at h
                 apply Finset.card_lt_card
                 exact ss
 
+lemma εclosure_eq_εclosure : εclosure tn f =  if h : f = (f.biUnion (fun q => tn.δ q none) ∪ f) then  f else εclosure tn (f.biUnion (fun q => tn.δ q none) ∪ f) := by
+  apply WellFounded.fixFEq
+
+theorem εclosure_empty_empty : εclosure tn ∅ = ∅ := by
+  rw [εclosure_eq_εclosure]
+  simp
+
+
+lemma εclosure_start_mem (q : qs) (f : Finset qs) : q ∈ f → q ∈ εclosure tn f := by
+  rw [εclosure_eq_εclosure]
+  split
+  · simp
+  · intro qin
+    apply εclosure_start_mem
+    apply Finset.mem_union_right
+    exact qin
+
+termination_by εclosure_start_mem => qs.card - f.card
+decreasing_by have h : ¬f = (Finset.biUnion f fun q => εNFA.δ tn q none) ∪ f := by assumption
+              simp at h
+              apply Exists.elim h
+              intro q ex
+              apply Exists.elim ex
+              intro p _
+              have ss : f ⊂ (Finset.biUnion f fun q => εNFA.δ tn q none) ∪ f := by apply Finset.ssubset_iff_subset_ne.mpr
+                                                                                   apply And.intro
+                                                                                   · apply Finset.subset_union_right
+                                                                                   · assumption
+              apply Nat.sub_lt_sub_left
+              · have : (Finset.biUnion f fun q => εNFA.δ tn q none) ⊆ qs.attach := by simp [· ⊆· ]
+                have : qs.attach.card = qs.card := by simp
+                rw [←this]
+                apply Finset.card_lt_card
+                apply Finset.ssubset_of_ssubset_of_subset
+                · exact ss
+                · apply Finset.union_subset
+                  · assumption
+                  · simp [· ⊆ ·]
+              · simp
+                apply Finset.card_lt_card
+                exact ss
+
+
+inductive EClosure (q : qs) : qs → Prop where
+  | base : EClosure q q
+  | step (q' : qs) : EClosure q q' → ∀ s : (tn.δ q' none), EClosure q s
+
+
+
+
 
 @[simp]
 def δ_step (q : Finset qs) (e : σs) : Finset qs := (εclosure tn q).biUnion (fun q' => tn.δ q' e)
@@ -58,12 +108,17 @@ def δ_star' (q : Finset qs) : (word σs) → Finset qs
   | [] => εclosure tn q
   | a :: as => δ_star' (δ_step tn q a) as
 
-def δ_star (w : word σs) : Finset qs := δ_star' tn {tn.q₀} w
+def δ_star (w : word σs) : Finset qs := δ_star' tn tn.q₀ w
 
 def εnfa_accepts (w : word σs) : Prop := (δ_star tn w ∩ tn.fs).Nonempty
 
 instance : Decidable (εnfa_accepts tn w) := by
   simp only [εnfa_accepts]
+  apply Finset.decidableNonempty
+
+def εNFA_lang : Lang σs := fun w => εnfa_accepts tn w
+
+instance : Decidable (w ∈ εNFA_lang tn) := by
   apply Finset.decidableNonempty
 
 @[simp]
@@ -73,7 +128,7 @@ theorem all_in_q (qs : Finset qs) : qs ∈ εnfa_to_nfa_q := by
   simp [εnfa_to_nfa_q, · ⊆ ·]
 
 @[simp]
-def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn {tn.q₀} , all_in_q (εclosure tn {tn.q₀})⟩
+def εnfa_to_nfa_init : { x // x ∈ @εnfa_to_nfa_q q qs } := ⟨ εclosure tn tn.q₀ , all_in_q (εclosure tn tn.q₀)⟩
 
 @[simp]
 def εnfa_to_nfa_fs : Finset { x // x ∈ @εnfa_to_nfa_q q qs } := by
@@ -90,7 +145,7 @@ def εnfa_to_nfa_δ :  { x // x ∈ @εnfa_to_nfa_q q qs } → σs → Finset { 
 
 @[simp]
 def εnfa_to_nfa : NFA σs (@εnfa_to_nfa_q q qs) :=
-  {q₀ := εnfa_to_nfa_init tn, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
+  {q₀ := {εnfa_to_nfa_init tn}, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q w) , all_in_q  (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨εclosure tn q , all_in_q _⟩} w := by
   induction w with
@@ -100,7 +155,7 @@ theorem δ_star'_eq (w : word σs): (q : Finset qs) → {⟨(εNFA.δ_star' tn q
 
 theorem δ_star_eq (w : word σs) : {⟨εNFA.δ_star tn w , all_in_q  (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]
-  rw [δ_star'_eq tn w {tn.q₀}]
+  rw [δ_star'_eq tn w tn.q₀]
   simp
 
 theorem εnfa_to_nfa_eq (w : word σs) : εnfa_accepts tn w ↔ nfa_accepts (εnfa_to_nfa tn) w := by
@@ -142,5 +197,8 @@ theorem εnfa_to_dfa_eq : εnfa_accepts tn w ↔ dfa_accepts (εnfa_to_dfa tn) w
     have := ToDFA.nfa_to_dfa_eq (εnfa_to_nfa tn) w
     apply this.mpr
     exact e
+
+
+
 
 end εNFA

@@ -12,7 +12,7 @@ import Mathlib.Data.FinEnum
 namespace NFA
 
 structure NFA (σs : Finset σ) (qs : Finset q) where
-  q₀ : qs                  -- initial state
+  q₀ : Finset qs                  -- initial state
   fs : Finset qs          -- accepting states
   δ : qs → σs → Finset qs -- transition function
 
@@ -33,7 +33,7 @@ def δ_star' (q : Finset qs) : (w : word σs) → Finset qs
   | e :: es => δ_star' (δ_step t q e) es
 
 @[simp]
-def δ_star : (w : word σs) → Finset qs := δ_star' t {t.q₀}
+def δ_star : (w : word σs) → Finset qs := δ_star' t t.q₀
 
 -- Whether a word is in the language that the NFA accepts
 @[simp]
@@ -42,16 +42,14 @@ def nfa_accepts (w : word σs) : Prop := by
   exact inter.Nonempty
 
 -- nfa accepts nil iff s is final
-theorem nfa_accepts_nil_iff_final : nfa_accepts t [] ↔ t.q₀ ∈ t.fs := by
+theorem nfa_accepts_nil_iff_final : nfa_accepts t [] ↔ Finset.Nonempty (t.q₀ ∩ t.fs) := by
   apply Iff.intro
   · intro ne
-    simp only [nfa_accepts, δ_star ] at ne
-    apply Finset.nonempty_inter_singleton_imp_in
+    simp only [nfa_accepts, δ_star,δ_star'] at ne
     exact ne
   · intro e
-    dsimp [nfa_accepts,δ_star]
-    rw [Finset.singleton_inter_of_mem e]
-    exact (Finset.singleton_nonempty t.q₀)
+    simp only [nfa_accepts,δ_star]
+    exact e
 
 instance decidableLang (w : word σs) : Decidable (nfa_accepts t w) := by
   dsimp [nfa_accepts]

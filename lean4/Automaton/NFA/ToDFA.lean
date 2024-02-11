@@ -22,7 +22,7 @@ theorem all_in_q (q : Finset qs) : q ∈ nfa_to_dfa_q  := by
   simp [nfa_to_dfa_q, · ⊆ ·]
 
 @[simp]
-def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨{tn.q₀} , all_in_q {tn.q₀}⟩
+def nfa_to_dfa_init : { x // x ∈ @nfa_to_dfa_q q qs } := ⟨tn.q₀ , all_in_q tn.q₀⟩
 
 @[simp]
 def nfa_to_dfa_fs : Finset { x // x ∈ @nfa_to_dfa_q q qs } :=
