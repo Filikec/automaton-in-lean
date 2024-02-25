@@ -42,20 +42,28 @@ lemma ZeroεNFALang : εNFA_lang (ZeroεNFA f) = ∅ := by
   trivial
 
 
+lemma EpsilonεNFAW : δ_star (EpsilonεNFA f) w = ∅ := by
+  induction w using List.reverseRecOn with
+  | H0 => sorry
+  | H1 e es s => simp [δ_star,δ_star']
+
 lemma EpsilonεNFALang : εnfa_accepts (EpsilonεNFA f) w ↔ w = [] := by
   apply Iff.intro
   · intro ac
     simp only [εnfa_accepts,EpsilonεNFA] at ac
     match w with
     | [] => simp
-    | e::es => simp only [δ_star,δ_star',Finset.Nonempty] at ac
-               apply Exists.elim ac
-               intro w win
-               simp [δ_step,Finset.biUnion] at win
-               rw [εNFA_δ_star'_empty] at win
-               simp
-               apply Finset.not_mem_empty
-               exact win.1
+    | e::es => induction es with
+               | nil => simp [Finset.Nonempty,δ_star,δ_star',Finset.biUnion] at ac
+                        rw [εclosure_eq_εclosure] at ac
+                        split at ac
+                        · trivial
+                        · trivial
+               | cons e es s => simp at s
+                                simp only [δ_star] at ac
+
+
+
   · intro w
     rw [w]
     simp [εnfa_accepts,δ_star,δ_star',EpsilonεNFA,Finset.Nonempty]
