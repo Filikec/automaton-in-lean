@@ -10,7 +10,7 @@ variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [Decidabl
 -- if a word has more characters than number of states in DFA, at least one state must be repeated
 theorem word_cycle {w : word σs} {s t : qs} (hlen : qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
     ∃ q a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ qs.card ∧ b ≠ [] ∧ δ_star' dfa s a = q ∧ δ_star' dfa q b = q ∧ δ_star' dfa q c = t := by
-  have ⟨n, m, hneq, heq⟩  := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card qs + 1) => δ_star' dfa s (w.take n)) (by simp)
+  obtain ⟨n, m, hneq, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card qs + 1) => δ_star' dfa s (w.take n)) (by simp)
   wlog hle : (n : ℕ) ≤ m
   · exact this _ hlen hx _ _ hneq.symm heq.symm (le_of_not_le hle)
   have hm : (m : ℕ) ≤ Fintype.card qs := Fin.is_le m

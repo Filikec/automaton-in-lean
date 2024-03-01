@@ -122,4 +122,39 @@ theorem eq_iff_fa_mem {fa fb : Finset α} : fa = fb ↔ ∀ a : α, a ∈ fa ↔
   · apply mem_iff_mem_eq
 
 
+theorem biUnion_union [DecidableEq β] (a b : Finset α) (f : α → Finset β) : Finset.biUnion (a ∪ b) f = (Finset.biUnion a f) ∪ (Finset.biUnion b f) := by
+  apply eq_iff_fa_mem.mpr
+  intro e
+  rw [Finset.mem_union,Finset.mem_biUnion,Finset.mem_biUnion,Finset.mem_biUnion]
+  apply Iff.intro
+  · intro ein
+    apply Exists.elim ein
+    intro q qin
+    rw [Finset.mem_union] at qin
+    apply Or.elim qin.1
+    · intro qina
+      apply Or.inl
+      exists q
+      use qina
+      exact qin.2
+    · intro qinb
+      apply Or.inr
+      exists q
+      use qinb
+      exact qin.2
+  · intro h
+    apply Or.elim h
+    · intro ex
+      apply Exists.elim ex
+      intro e ein
+      exists e
+      exact ⟨mem_union_left _ ein.1,ein.2⟩
+    · intro ex
+      apply Exists.elim ex
+      intro e ein
+      exists e
+      exact ⟨mem_union_right _ ein.1,ein.2⟩
+
+
+
 end Finset

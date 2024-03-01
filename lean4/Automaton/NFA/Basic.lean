@@ -3,6 +3,7 @@ import Automaton.Language.Basic
 import Automaton.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.FinEnum
+import Automaton.Regex.Basic
 
 /-!
   This file contains the definition of NFA as well as a few fundemantal operations
@@ -17,7 +18,7 @@ structure NFA (σs : Finset σ) (qs : Finset q) where
   δ : qs → σs → Finset qs -- transition function
 
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (r s t : NFA σs qs) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (t : NFA σs qs) [DecidableEq σ] [DecidableEq q]
 
 
 -- one step in the operation of NFA, consuming one character
@@ -51,8 +52,36 @@ theorem nfa_accepts_nil_iff_final : nfa_accepts t [] ↔ Finset.Nonempty (t.q₀
     simp only [nfa_accepts,δ_star]
     exact e
 
-instance decidableLang (w : word σs) : Decidable (nfa_accepts t w) := by
+instance decidableAccepts (w : word σs) : Decidable (nfa_accepts t w) := by
   dsimp [nfa_accepts]
   apply Finset.decidableNonempty
+
+def nfaLang : Lang σs := fun w => nfa_accepts t w
+
+instance decidableLang (w : word σs) : Decidable (w ∈ nfaLang t) := by
+  dsimp [nfa_accepts]
+  apply Finset.decidableNonempty
+
+
+lemma δ_star'_append_eq : (q : Finset qs) → δ_star' t (δ_star' t q l) r = δ_star' t q (l ++ r) := by
+  induction l with
+  | nil => simp
+  | cons e es s => intro q
+                   simp only [δ_star',List.append_eq]
+                   apply s
+
+
+theorem δ_star'_union : (a b : Finset qs) → δ_star' t (a ∪ b) w = δ_star' t a w ∪ δ_star' t b w := by
+  induction w with
+  | nil => simp
+  | cons e es s => intro a b
+                   simp only [δ_star',δ_step]
+                   rw [Finset.biUnion_union]
+                   apply s
+
+
+
+
+
 
 end NFA

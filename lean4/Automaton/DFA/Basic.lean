@@ -160,6 +160,30 @@ theorem state_reachable_iff (q q' : qs) : reachable t q q' ↔ ∃ w : word σs 
     apply δ_star'_reachable
     exact reachable.base
 
+theorem ex_ne_nil_accepted_iff (h' : t.q₀ ∉ t.fs) : (∃ w, w ∈ dfaLang t ∧ w ≠ []) ↔ ∃ f ∈ t.fs, reachable t t.q₀ f := by
+  simp only [dfaLang,dfa_accepts,δ_star]
+  apply Iff.intro
+  · intro h
+    apply Exists.elim h
+    intro w win
+    rw [Set.mem_def] at win
+    exists (δ_star' t t.q₀ w)
+    use win.1
+    rw [state_reachable_iff]
+    exists w
+  · intro h
+    apply Exists.elim h
+    intro q qin
+    have : ∃ w : word σs , δ_star' t t.q₀ w = q := (state_reachable_iff t t.q₀ q).mp qin.2
+    apply Exists.elim this
+    intro w weq
+    have : dfa_accepts t w := by simp only [dfa_accepts,δ_star]; rw [weq]; exact qin.1
+    cases Decidable.em (w = []) with
+    | inl h => rw [h] at this
+               simp only [dfa_accepts,δ_star,δ_star'] at this
+               contradiction
+    | inr h => exists w
+
 
 lemma reachable_δ_star' (w : word σs) (q : qs) : (q' : qs) → reachable t (δ_star' t q' w) q → reachable t q' q := by
   match w with
@@ -534,5 +558,86 @@ instance decReachable : DecidableRel (reachable t) := by
 instance decExδStar' : Decidable (∃ w : word σs, δ_star' t a w = b) := by
   apply decidable_of_iff (reachable t a b)
   exact (state_reachable_iff t a b)
+
+-- Structure
+-- Exists reachable final state that is not starting state?
+--  yes : exists
+--  no : is start state in final states?
+--    no : doesn't exist
+--    yes : is there a path from start state to start state?
+--      no : doesn't exist
+--      yes : exists
+instance decAcceptsNeNil : Decidable (∃ w, dfa_accepts t w ∧ w ≠ []) := by
+  simp only [dfa_accepts]
+  have : Decidable (∃ f ∈ t.fs, f ≠ t.q₀ ∧ reachable t t.q₀ f) := by infer_instance
+  match this with
+  | isTrue h => apply Decidable.isTrue
+                apply Exists.elim h
+                intro q h
+                have := (state_reachable_iff t t.q₀ q).mp h.2.2
+                apply Exists.elim this
+                intro w eq
+                exists w
+                simp only [δ_star]
+                rw [eq]
+                use h.1
+                intro nil
+                rw [nil] at eq
+                simp only [δ_star'] at eq
+                rw [←eq] at h
+                apply h.2.1
+                rfl
+  | isFalse h => have g : Decidable (t.q₀ ∈ t.fs) := by infer_instance
+                 match g with
+                 | isTrue h'=> have d : Decidable (∃ e : σs,(fun e => ∃ w, δ_star' t (t.δ t.q₀ e) w = t.q₀) e ) := Fintype.decidableExistsFintype
+                               match d with
+                               | isTrue ex => apply Decidable.isTrue
+                                              apply Exists.elim ex
+                                              intro e eex
+                                              apply Exists.elim eex
+                                              intro w weq
+                                              exists (e::w)
+                                              simp only [δ_star,δ_star']
+                                              rw [weq]
+                                              use h'
+                                              simp
+                                | isFalse ex => apply Decidable.isFalse
+                                                intro ex'
+                                                apply h
+                                                apply Exists.elim ex'
+                                                intro w wne
+                                                exists δ_star t w
+                                                use wne.1
+                                                apply And.intro
+                                                · intro eq
+                                                  rw [eq] at wne
+                                                  apply ex
+                                                  match w with
+                                                  | [] => have : [] ≠ [] := wne.2
+                                                          contradiction
+                                                  | e::es => exists e
+                                                             exists es
+                                                · simp only [δ_star]
+                                                  apply δ_star'_reachable
+                                                  exact reachable.base
+                 | isFalse h' => apply Decidable.isFalse
+                                 intro ex
+                                 apply h
+                                 apply Exists.elim ex
+                                 intro w h
+                                 exists δ_star t w
+                                 use h.1
+                                 cases Decidable.em (t.q₀ = δ_star t w) with
+                                 | inl eq => rw [←eq] at h
+                                             have : t.q₀ ∈ t.fs := h.1
+                                             contradiction
+                                 | inr eq => rw [←eq_comm] at eq
+                                             use eq
+                                             rw [state_reachable_iff]
+                                             exists w
+
+
+
+
 
 end DFA
