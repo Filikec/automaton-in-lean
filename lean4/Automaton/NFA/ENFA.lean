@@ -92,15 +92,6 @@ decreasing_by have h : ¬f = (Finset.biUnion f fun q => εNFA.δ tn q none) ∪ 
                 apply Finset.card_lt_card
                 exact ss
 
-
-inductive EClosure (q : qs) : qs → Prop where
-  | base : EClosure q q
-  | step (q' : qs) : EClosure q q' → ∀ s : (tn.δ q' none), EClosure q s
-
-
-
-
-
 @[simp]
 def δ_step (q : Finset qs) (e : σs) : Finset qs := (εclosure tn q).biUnion (fun q' => tn.δ q' e)
 

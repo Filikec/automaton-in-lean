@@ -89,8 +89,8 @@ theorem mem_iff_mem_eq : {fa fb : Finset α} → (h : ∀ a : α, a ∈ fa ↔ a
              induction fb using Finset.induction_on with
              | empty => rfl
              | insert _ eq => rw [eq]
-                              have : False := mem_iff_mem_eq_lemma h
-                              contradiction
+                              exfalso
+                              exact mem_iff_mem_eq_lemma h
                               intro a
                               apply Iff.intro
                               · intro einf
@@ -156,5 +156,19 @@ theorem biUnion_union [DecidableEq β] (a b : Finset α) (f : α → Finset β) 
       exact ⟨mem_union_right _ ein.1,ein.2⟩
 
 
+theorem nonempty_inter_subset {a b c : Finset α} (h : a ⊆ c) : Finset.Nonempty (a ∩ b) → Finset.Nonempty (c ∩ b) := by
+  intro ne
+  rw [Finset.Nonempty]
+  rw [Finset.Nonempty] at ne
+  apply Exists.elim ne
+  intro x xin
+  exists x
+  apply Finset.mem_inter.mpr
+  rw [Finset.mem_inter] at xin
+  apply And.intro
+  · apply Finset.mem_of_subset
+    · exact h
+    · exact xin.1
+  · exact xin.2
 
 end Finset

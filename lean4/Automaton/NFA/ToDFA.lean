@@ -59,4 +59,23 @@ theorem nfa_to_dfa_eq (w : word σs) : nfa_accepts tn w ↔ dfa_accepts (nfa_to_
     simp [nfa_to_dfa] at a
     exact a.2
 
+instance instDecidableExWNeNil : Decidable (∃ a, a ∈ nfaLang tn ∧ a ≠ []) := by
+  have : Decidable (∃ w, DFA.dfa_accepts (nfa_to_dfa tn) w ∧ w ≠ []) := by infer_instance
+  match this with
+  | isTrue h => apply Decidable.isTrue
+                simp only [nfaLang]
+                apply Exists.elim h
+                intro w h
+                rw [←nfa_to_dfa_eq] at h
+                exists w
+  | isFalse h => apply Decidable.isFalse
+                 intro ex
+                 simp only [nfaLang] at ex
+                 apply Exists.elim ex
+                 intro w hin
+                 apply h
+                 exists w
+                 rw [←nfa_to_dfa_eq]
+                 apply hin
+
 end ToDFA

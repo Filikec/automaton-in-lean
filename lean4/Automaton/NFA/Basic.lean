@@ -79,9 +79,9 @@ theorem δ_star'_union : (a b : Finset qs) → δ_star' t (a ∪ b) w = δ_star'
                    rw [Finset.biUnion_union]
                    apply s
 
-
-
-
-
+theorem δ_subset_δ_step {q : Finset qs} (h : a ∈ q) : t.δ a e ⊆ δ_step t q e := by
+  simp [δ_step]
+  apply Finset.subset_biUnion_of_mem (fun n => NFA.δ t n e)
+  exact h
 
 end NFA
