@@ -3,18 +3,18 @@ import Mathlib.Data.Fintype.Card
 
 namespace DFA
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (dfa : DFA σs qs)
+variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (dfa : DFA σs q)
 
 -- based on proof in mathlib4 Computability/DFA
 
 -- if a word has more characters than number of states in DFA, at least one state must be repeated
-theorem word_cycle {w : word σs} {s t : qs} (hlen : qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
-    ∃ q a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ qs.card ∧ b ≠ [] ∧ δ_star' dfa s a = q ∧ δ_star' dfa q b = q ∧ δ_star' dfa q c = t := by
-  obtain ⟨n, m, hneq, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card qs + 1) => δ_star' dfa s (w.take n)) (by simp)
+theorem word_cycle {w : word σs} {s t : dfa.qs} (hlen : dfa.qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
+    ∃ q a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ δ_star' dfa s a = q ∧ δ_star' dfa q b = q ∧ δ_star' dfa q c = t := by
+  obtain ⟨n, m, hneq, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card dfa.qs + 1) => δ_star' dfa s (w.take n)) (by simp)
   wlog hle : (n : ℕ) ≤ m
   · exact this _ hlen hx _ _ hneq.symm heq.symm (le_of_not_le hle)
-  have hm : (m : ℕ) ≤ Fintype.card qs := Fin.is_le m
-  have cardEq : Fintype.card {x // x ∈ qs} = Finset.card qs := by simp
+  have hm : (m : ℕ) ≤ Fintype.card dfa.qs := Fin.is_le m
+  have cardEq : Fintype.card {x // x ∈ dfa.qs} = Finset.card dfa.qs := by simp
   rw [←cardEq] at hlen
   refine'
     ⟨δ_star' dfa s ((w.take m).take n), (w.take m).take n, (w.take m).drop n, w.drop m, _, _, _, by rfl, _⟩
@@ -44,8 +44,8 @@ def listPower (l : List α) : ℕ → List α
 
 -- Any word accepted by a dfa can be broken into three parts and the middle part can be repeated any number of time
 -- and each time it will remain in the language. tldr; there is a cycle
-theorem pumping_lemma {w : word σs} (hlen : qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
-    ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ qs.card ∧ b ≠ [] ∧ ∀ n, (a ++ listPower b n ++ c) ∈ dfaLang dfa := by
+theorem pumping_lemma {w : word σs} (hlen : dfa.qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
+    ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ ∀ n, (a ++ listPower b n ++ c) ∈ dfaLang dfa := by
   obtain ⟨_, a, b, c, hx, hlen, hnil, rfl, hb, hc⟩ := word_cycle dfa hlen rfl
   use a, b, c, hx, hlen, hnil
   intro n

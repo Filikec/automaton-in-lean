@@ -8,12 +8,12 @@ open NFA ToDFA
 
 namespace StarNFA
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (t : NFA σs qs) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs q) [DecidableEq σ] [DecidableEq q]
 
 
-def starNFA_δ : qs → σs → Finset qs := fun q σ => if Finset.Nonempty (t.δ q σ ∩ t.fs) then t.δ q σ ∪ t.q₀ else t.δ q σ
+def starNFA_δ : t.qs → σs → Finset t.qs := fun q σ => if Finset.Nonempty (t.δ q σ ∩ t.fs) then t.δ q σ ∪ t.q₀ else t.δ q σ
 
-def starNFA : NFA σs qs := {q₀ := t.q₀, fs := t.fs, δ := starNFA_δ t}
+def starNFA : NFA σs q := {q₀ := t.q₀, fs := t.fs, δ := starNFA_δ t}
 
 lemma fs_eq : t.fs = (starNFA t).fs := by simp [starNFA]
 
@@ -25,7 +25,7 @@ lemma δ_subset : t.δ s e ⊆ (starNFA t).δ s e := by
   · apply Finset.subset_union_left
   · rfl
 
-theorem subset_δ_star'_subset : (s₁ s₂ : Finset qs) → s₁ ⊆ s₂ → δ_star' t s₁ w ⊆ δ_star' t s₂ w := by
+theorem subset_δ_star'_subset : (s₁ s₂ : Finset t.qs) → s₁ ⊆ s₂ → δ_star' t s₁ w ⊆ δ_star' t s₂ w := by
   induction w using List.reverseRecOn with
   | H0 => simp [δ_star']
   | H1 w e s => intro s₁ s₂ ss
@@ -59,7 +59,7 @@ theorem δ_star'_subset : δ_star' t s w ⊆ δ_star' (starNFA t) s w  := by
                  exact δ_step_subset t ss
 
 
-theorem δ_step_inter_nonempty (q : Finset qs) : Finset.Nonempty (δ_step (starNFA t) q e ∩ (starNFA t).fs) ↔ Finset.Nonempty (δ_step t q e ∩ t.fs) := by
+theorem δ_step_inter_nonempty (q : Finset t.qs) : Finset.Nonempty (δ_step (starNFA t) q e ∩ (starNFA t).fs) ↔ Finset.Nonempty (δ_step t q e ∩ t.fs) := by
   apply Iff.intro
   · intro h
     rw [Finset.Nonempty] at h
@@ -95,7 +95,7 @@ theorem δ_step_inter_nonempty (q : Finset qs) : Finset.Nonempty (δ_step (starN
     · apply h
 
 
-theorem δ_star'_eq_union (q : Finset qs) : Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_star' (starNFA t) q [e] = δ_star' t q [e] ∪ t.q₀ := by
+theorem δ_star'_eq_union (q : Finset t.qs) : Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_star' (starNFA t) q [e] = δ_star' t q [e] ∪ t.q₀ := by
   intro h
   simp only [δ_star,δ_star',δ_step]
   simp only [δ_step] at h
@@ -149,7 +149,7 @@ theorem δ_star'_eq_union (q : Finset qs) : Finset.Nonempty (δ_step t q e ∩ t
         apply Finset.mem_inter.mpr
         exact ⟨bin.2, ain.2⟩
 
-lemma δ_step_star_eq (q : Finset qs): ¬Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_step (starNFA t) q e = δ_step t q e := by
+lemma δ_step_star_eq (q : Finset t.qs): ¬Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_step (starNFA t) q e = δ_step t q e := by
   intro ne
   simp only [starNFA,starNFA_δ,δ_step]
   rw [Finset.eq_iff_fa_mem]
@@ -185,7 +185,7 @@ theorem nfa_accepts_starNFA : nfa_accepts t w → nfa_accepts (starNFA t) w := b
   simp only [nfa_accepts] at h
   simp only [nfa_accepts]
   apply Finset.nonempty_inter_subset
-  · apply δ_star'_subset
+  · apply δ_star'_subset t
   · simp only [starNFA]
     exact h
 
@@ -223,7 +223,7 @@ theorem starNFA_accepts_append (a₁ : nfa_accepts (starNFA t) w₁) (a₂ : nfa
   · exact qin.2
 
 
-theorem accepts_or_ex_prefix_state : (q : Finset qs) → Finset.Nonempty (δ_star' (starNFA t) q w ∩ (starNFA t).fs) →
+theorem accepts_or_ex_prefix_state : (q : Finset t.qs) → Finset.Nonempty (δ_star' (starNFA t) q w ∩ (starNFA t).fs) →
   (Finset.Nonempty (δ_star' t q w ∩ t.fs) ∨ ∃ a b, a ≠ [] ∧ a++b=w ∧ Finset.Nonempty (δ_star' t q a ∩ t.fs) ∧ b ∈ nfaLang (starNFA t)) := by
   induction w with
   | nil=> simp only [nfaLang,nfa_accepts,δ_star,δ_star',δ_step]
@@ -263,31 +263,35 @@ theorem accepts_or_ex_prefix_state : (q : Finset qs) → Finset.Nonempty (δ_sta
                                   apply Or.inr
                                   exists e::a
                                   exists b
-                                  simp
-                                  use bin.2.1
+                                  have : e :: a ≠ [] := by simp
+                                  use this
                                   apply And.intro
-                                  · exact bin.2.2.1
-                                  · apply bin.2.2.2
+                                  · rw [←bin.2.1]; simp
+                                  · apply And.intro
+                                    · exact bin.2.2.1
+                                    · apply bin.2.2.2
                               · intro xins
                                 apply Or.inr
                                 exists [e]
                                 exists es
-                                simp
+                                have : [e] ≠ [] := by simp
+                                use this
                                 apply And.intro
-                                · apply h
-                                · simp only [Finset.Nonempty]
-                                  exists x
-                                  rw [Finset.mem_inter]
-                                  exact ⟨xins,xin.2⟩
+                                · simp
+                                · apply And.intro
+                                  · apply h
+                                  · simp only [Finset.Nonempty]
+                                    exists x
+                                    rw [Finset.mem_inter]
+                                    exact ⟨xins,xin.2⟩
                    | inr h => simp only [δ_star'] at acc
-                              have := s ((δ_step (starNFA t) q e)) acc
+                              have := s (δ_step (starNFA t) q e) acc
+                              rw [δ_step_star_eq] at this
                               apply Or.elim this
                               · intro e'
                                 apply Or.inl
                                 simp only [δ_star']
-                                rw [δ_step_star_eq] at e'
                                 exact e'
-                                exact h
                               · intro ex
                                 apply Exists.elim ex
                                 intro a ex
@@ -296,15 +300,8 @@ theorem accepts_or_ex_prefix_state : (q : Finset qs) → Finset.Nonempty (δ_sta
                                 apply Or.inr
                                 exists e::a
                                 exists b
-                                simp
-                                use bin.2.1
-                                apply And.intro
-                                · rw [δ_step_star_eq] at bin
-                                  simp only [δ_step] at bin
-                                  exact bin.2.2.1
-                                  exact h
-                                · simp only [nfaLang,nfa_accepts,Set.mem_def] at bin
-                                  exact bin.2.2.2
+                                exact ⟨by simp,by rw [←bin.2.1]; rfl,bin.2.2.1,bin.2.2.2⟩
+                              · exact h
 
 
 theorem accepts_or_ex_prefix : w ∈ nfaLang (starNFA t) → (w ∈ nfaLang t ∨ ∃ a b, a ≠ [] ∧ a++b=w ∧ a ∈ nfaLang t ∧ b ∈ nfaLang (starNFA t)) := by
@@ -329,8 +326,8 @@ theorem starNFA_accepts_plusLang : w ∈ nfaLang (starNFA t) ↔ w ∈ Regex.plu
       apply Exists.elim ex
       intro b h
       rw [←h.2.1]
-      have : b.length < w.length := by
-        rw [←h.2.1] -- make clear that the program terminates
+      have : b.length < w.length := by -- make clear that the program terminates
+        rw [←h.2.1]
         simp only [List.length_append,lt_add_iff_pos_left]
         apply List.length_pos_iff_ne_nil.mpr
         exact h.1

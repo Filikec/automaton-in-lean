@@ -12,34 +12,35 @@ import Automaton.Regex.Basic
 
 namespace NFA
 
-structure NFA (σs : Finset σ) (qs : Finset q) where
-  q₀ : Finset qs                  -- initial state
+structure NFA (σs : Finset σ) (q : Type _) where
+  qs : Finset q
+  q₀ : Finset qs          -- initial state
   fs : Finset qs          -- accepting states
   δ : qs → σs → Finset qs -- transition function
 
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} {qs : Finset q} (t : NFA σs qs) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs q) [DecidableEq σ] [DecidableEq q]
 
 
 -- one step in the operation of NFA, consuming one character
 -- take the union of all sets of states reachable from current set of states
 @[simp]
-def δ_step  (q : Finset qs) (e : σs) : Finset qs := q.biUnion (fun n => t.δ n e)
+def δ_step  (q : Finset t.qs) (e : σs) : Finset t.qs := q.biUnion (fun n => t.δ n e)
 
 -- δ* function for NFA
 -- returns set of states reached after inputting a word
 @[simp]
-def δ_star' (q : Finset qs) : (w : word σs) → Finset qs
+def δ_star' (q : Finset t.qs) : (w : word σs) → Finset t.qs
   | [] => q
   | e :: es => δ_star' (δ_step t q e) es
 
 @[simp]
-def δ_star : (w : word σs) → Finset qs := δ_star' t t.q₀
+def δ_star : (w : word σs) → Finset t.qs := δ_star' t t.q₀
 
 -- Whether a word is in the language that the NFA accepts
 @[simp]
 def nfa_accepts (w : word σs) : Prop := by
-  have inter : Finset qs := (δ_star t w) ∩ t.fs
+  have inter : Finset t.qs := (δ_star t w) ∩ t.fs
   exact inter.Nonempty
 
 -- nfa accepts nil iff s is final
@@ -63,7 +64,7 @@ instance decidableLang (w : word σs) : Decidable (w ∈ nfaLang t) := by
   apply Finset.decidableNonempty
 
 
-lemma δ_star'_append_eq : (q : Finset qs) → δ_star' t (δ_star' t q l) r = δ_star' t q (l ++ r) := by
+lemma δ_star'_append_eq : (q : Finset t.qs) → δ_star' t (δ_star' t q l) r = δ_star' t q (l ++ r) := by
   induction l with
   | nil => simp
   | cons e es s => intro q
@@ -71,7 +72,7 @@ lemma δ_star'_append_eq : (q : Finset qs) → δ_star' t (δ_star' t q l) r = �
                    apply s
 
 
-theorem δ_star'_union : (a b : Finset qs) → δ_star' t (a ∪ b) w = δ_star' t a w ∪ δ_star' t b w := by
+theorem δ_star'_union : (a b : Finset t.qs) → δ_star' t (a ∪ b) w = δ_star' t a w ∪ δ_star' t b w := by
   induction w with
   | nil => simp
   | cons e es s => intro a b
@@ -79,7 +80,7 @@ theorem δ_star'_union : (a b : Finset qs) → δ_star' t (a ∪ b) w = δ_star'
                    rw [Finset.biUnion_union]
                    apply s
 
-theorem δ_subset_δ_step {q : Finset qs} (h : a ∈ q) : t.δ a e ⊆ δ_step t q e := by
+theorem δ_subset_δ_step {q : Finset t.qs} (h : a ∈ q) : t.δ a e ⊆ δ_step t q e := by
   simp [δ_step]
   apply Finset.subset_biUnion_of_mem (fun n => NFA.δ t n e)
   exact h

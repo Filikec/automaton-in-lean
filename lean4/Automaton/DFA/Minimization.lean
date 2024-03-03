@@ -7,30 +7,30 @@ open DFA Finset
 
 namespace DFA
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ} {qs : Finset q} [DecidableEq σ] [DecidableEq q] (r s t : DFA σs qs)
+variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s t : DFA σs q)
 
 @[simp]
-def minimization_reachable_q (t : DFA σs qs) : Finset qs := qs.attach.filter (fun q => reachable t t.q₀ q)
+def minimization_reachable_q (t : DFA σs q) : Finset t.qs := t.qs.attach.filter (fun q => reachable t t.q₀ q)
 
 @[simp]
-def minimization_reachable_init (t : DFA σs qs) : { x // x ∈ minimization_reachable_q t } := by
+def minimization_reachable_init (t : DFA σs q) : { x // x ∈ minimization_reachable_q t } := by
   exact ⟨t.q₀ , by simp only [minimization_reachable_q,Finset.mem_filter]; exact ⟨by simp,reachable.base⟩⟩
 
 @[simp]
-def minimization_reachable_fs (t : DFA σs qs) : Finset {x // x ∈ minimization_reachable_q t} :=
+def minimization_reachable_fs (t : DFA σs q) : Finset {x // x ∈ minimization_reachable_q t} :=
   (minimization_reachable_q t).attach.filter (fun q => q.1 ∈ t.fs)
 
 @[simp]
-def minimization_reachable_δ (t : DFA σs qs) : { x // x ∈ minimization_reachable_q t } → σs → { x // x ∈ minimization_reachable_q t } := by
+def minimization_reachable_δ (t : DFA σs q) : { x // x ∈ minimization_reachable_q t } → σs → { x // x ∈ minimization_reachable_q t } := by
   intro q e
   have := q.2
   simp at this
   exact ⟨ t.δ q e, by simp; apply reachable.step; exact this⟩
 
-def minimization_reachable (t : DFA σs qs) : DFA σs (minimization_reachable_q t) :=
+def minimization_reachable (t : DFA σs q) : DFA σs t.qs :=
   {q₀ := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
 
-lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : qs) → (r : reachable t t.q₀ q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
+lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : t.qs) → (r : reachable t t.q₀ q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
   induction w with
   | nil => simp
   | cons a as s => simp only [δ_star']
@@ -68,13 +68,13 @@ theorem minimization_reachable_eq {w : word σs} : dfa_accepts t w ↔ dfa_accep
     exact this.2
 
 
-inductive distinct : qs → qs → Prop where
-  | base (a b : qs) : ¬(a ∈ t.fs ↔ b ∈ t.fs) → distinct a b
-  | step (a b : qs) : ∀ s : σs, distinct (t.δ a s) (t.δ b s) → distinct a b
+inductive distinct : t.qs → t.qs → Prop where
+  | base (a b : t.qs) : ¬(a ∈ t.fs ↔ b ∈ t.fs) → distinct a b
+  | step (a b : t.qs) : ∀ s : σs, distinct (t.δ a s) (t.δ b s) → distinct a b
 
-def nondistinct (a b : qs) : Prop := ¬ distinct t a b
+def nondistinct (a b : t.qs) : Prop := ¬ distinct t a b
 
-lemma distinct_if_δ_star'_distinct (w : word σs) : (a b : qs) → distinct t (δ_star' t a w) (δ_star' t b w) → distinct t a b := by
+lemma distinct_if_δ_star'_distinct (w : word σs) : (a b : t.qs) → distinct t (δ_star' t a w) (δ_star' t b w) → distinct t a b := by
   induction w using List.reverseRecOn  with
   | H0 => intro a b d
           simp only [δ_star'] at d
@@ -86,7 +86,7 @@ lemma distinct_if_δ_star'_distinct (w : word σs) : (a b : qs) → distinct t (
                 exact d
 
 
-theorem distinct_iff_ex_notaccepted (a b : qs) : distinct t a b ↔ ∃ l : word σs, ¬(δ_star' t a l ∈ t.fs ↔ δ_star' t b l ∈ t.fs) := by
+theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ ∃ l : word σs, ¬(δ_star' t a l ∈ t.fs ↔ δ_star' t b l ∈ t.fs) := by
   apply Iff.intro
   · intro d
     induction d with
@@ -111,7 +111,7 @@ theorem nondistinct_iff_forall_accepted : nondistinct t a b ↔ ∀ w : word σs
   rw [←Decidable.not_exists_not]
   apply nondistinct_iff_nex_notaccepted
 
-theorem nondistinct.Symm {a b: qs} : nondistinct t a b → nondistinct t b a := by
+theorem nondistinct.Symm {a b: t.qs} : nondistinct t a b → nondistinct t b a := by
   intro n
   simp only [nondistinct]
   simp only [nondistinct] at n
@@ -130,7 +130,7 @@ theorem nondistinct.Symm {a b: qs} : nondistinct t a b → nondistinct t b a := 
                       apply distinct.step
                       exact d
 
-theorem nondistinct.Refl {a : qs} : nondistinct t a a := by
+theorem nondistinct.Refl {a : t.qs} : nondistinct t a a := by
   intro d
   rw [distinct_iff_ex_notaccepted] at d
   apply Exists.elim d
@@ -138,7 +138,7 @@ theorem nondistinct.Refl {a : qs} : nondistinct t a a := by
   apply h
   rfl
 
-theorem nondistinct.Trans {a b c : qs} : nondistinct t a b → nondistinct t b c → nondistinct t a c := by
+theorem nondistinct.Trans {a b c : t.qs} : nondistinct t a b → nondistinct t b c → nondistinct t a c := by
   intro n₁ n₂
   rw [nondistinct_iff_forall_accepted] at n₁
   rw [nondistinct_iff_forall_accepted] at n₂
@@ -154,14 +154,14 @@ theorem nondistinct.Trans {a b c : qs} : nondistinct t a b → nondistinct t b c
     apply (n₂ w).mpr
     exact cin
 
-theorem nondistinct_step {a b : qs} {e : σs} : nondistinct t a b → nondistinct t (t.δ a e) (t.δ b e) := by
+theorem nondistinct_step {a b : t.qs} {e : σs} : nondistinct t a b → nondistinct t (t.δ a e) (t.δ b e) := by
   intro n
   intro d
   apply n
   apply distinct.step
   exact d
 
-theorem nondistinct_self {a : qs} : nondistinct t a a := by
+theorem nondistinct_self {a : t.qs} : nondistinct t a a := by
   simp only [nondistinct]
   intro d
   rw [distinct_iff_ex_notaccepted] at d
@@ -179,24 +179,24 @@ instance instNondistinctEquivalence : Equivalence (nondistinct t) := by
 
 -- Table filling algorithm
 
-def all_pairs : Finset (qs × qs) := qs.attach.biUnion (fun q₁ => qs.attach.biUnion (fun q₂ => {⟨q₁,q₂⟩}))
+def all_pairs : Finset (t.qs × t.qs) := t.qs.attach.biUnion (fun q₁ => t.qs.attach.biUnion (fun q₂ => {⟨q₁,q₂⟩}))
 
-def start : Finset (qs × qs) := all_pairs.filter (fun (a,b) => ¬(a ∈ t.fs ↔ b ∈ t.fs))
+def start : Finset (t.qs × t.qs) := (all_pairs t).filter (fun (a,b) => ¬(a ∈ t.fs ↔ b ∈ t.fs))
 
-lemma start_subset_all : start t  ⊆ all_pairs := by
+lemma start_subset_all : start t  ⊆ all_pairs t := by
   simp [start]
 
-def step (c a : Finset (qs × qs)) : Finset (qs × qs) := c ∪ (a.filter (fun (a,b) => ∃ s : σs, (t.δ a s, t.δ b s) ∈ c))
+def step (c a : Finset (t.qs × t.qs)) : Finset (t.qs × t.qs) := c ∪ (a.filter (fun (a,b) => ∃ s : σs, (t.δ a s, t.δ b s) ∈ c))
 
-lemma table_aux_decreasing : ¬card (step t c all_pairs) = card c → c ⊆ all_pairs → (@all_pairs q qs).card - (step t c all_pairs).card < (@all_pairs q qs).card - c.card := by
+lemma table_aux_decreasing : ¬card (step t c (all_pairs t)) = card c → c ⊆ all_pairs t → (all_pairs t).card - (step t c (all_pairs t)).card < (all_pairs t).card - c.card := by
   intro g h
-  have d : c ⊂ step t c   all_pairs := by apply Finset.ssubset_iff_subset_ne.mpr
-                                          apply And.intro
-                                          · simp only [step]
-                                            apply Finset.subset_union_left
-                                          · intro eq
-                                            apply g
-                                            rw [←eq]
+  have d : c ⊂ step t c (all_pairs t) := by apply Finset.ssubset_iff_subset_ne.mpr
+                                            apply And.intro
+                                            · simp only [step]
+                                              apply Finset.subset_union_left
+                                            · intro eq
+                                              apply g
+                                              rw [←eq]
   apply Nat.sub_lt_sub_left
   · apply Nat.lt_iff_le_and_ne.mpr
     apply And.intro
@@ -213,20 +213,20 @@ lemma table_aux_decreasing : ¬card (step t c all_pairs) = card c → c ⊆ all_
   · apply Finset.card_lt_card
     exact d
 
-def table_aux (c : Finset (qs × qs)) (h : c ⊆ all_pairs) : Finset (qs × qs) :=
-  if (step t c all_pairs).card = c.card then c else  table_aux (step t c all_pairs) (by simp only [step]
-                                                                                        apply Finset.union_subset_iff.mpr
-                                                                                        apply And.intro
-                                                                                        · exact h
-                                                                                        · simp)
-termination_by table_aux c h => (@all_pairs q qs).card - c.card
+def table_aux (c : Finset (t.qs × t.qs)) (h : c ⊆ all_pairs t) : Finset (t.qs × t.qs) :=
+  if (step t c (all_pairs t)).card = c.card then c else  table_aux (step t c (all_pairs t)) (by simp only [step]
+                                                                                                apply Finset.union_subset_iff.mpr
+                                                                                                apply And.intro
+                                                                                                · exact h
+                                                                                                · simp)
+termination_by table_aux c h => (all_pairs t).card - c.card
 decreasing_by apply table_aux_decreasing t (by assumption) (by assumption)
 
-def table_filling : Finset (qs × qs) := table_aux t (start t) (start_subset_all t)
+def table_filling : Finset (t.qs × t.qs) := table_aux t (start t) (start_subset_all t)
 
-def distinct_table_filling (a b : qs) : Bool := ⟨a,b⟩ ∈ table_filling t
+def distinct_table_filling (a b : t.qs) : Bool := ⟨a,b⟩ ∈ table_filling t
 
-lemma step_subset (a b : Finset ({ x // x ∈ qs } × { x // x ∈ qs })) : a ⊆ b → step t a b ⊆ b := by
+lemma step_subset (a b : Finset ({ x // x ∈ t.qs } × { x // x ∈ t.qs })) : a ⊆ b → step t a b ⊆ b := by
   intro ss
   simp only [step]
   apply Finset.union_subset_iff.mpr
@@ -234,10 +234,10 @@ lemma step_subset (a b : Finset ({ x // x ∈ qs } × { x // x ∈ qs })) : a �
   · exact ss
   · apply Finset.filter_subset
 
-lemma table_aux_eq_table_aux : table_aux t c h = if (step t c all_pairs).card = c.card then c else table_aux t (step t c all_pairs) (step_subset t c all_pairs h) := by
+lemma table_aux_eq_table_aux : table_aux t c h = if (step t c (all_pairs t)).card = c.card then c else table_aux t (step t c (all_pairs t)) (step_subset t c (all_pairs t) h) := by
   apply WellFounded.fixFEq
 
-theorem table_aux_forall (P : Finset (qs × qs) → Prop) (c : Finset (qs × qs)) {h : c ⊆ all_pairs} : P c → (∀ f : Finset (qs × qs), P f → P (step t f all_pairs)) → P (table_aux t c h) := by
+theorem table_aux_forall (P : Finset (t.qs × t.qs) → Prop) (c : Finset (t.qs × t.qs)) {h : c ⊆ all_pairs t} : P c → (∀ f : Finset (t.qs × t.qs), P f → P (step t f (all_pairs t))) → P (table_aux t c h) := by
   intro b fa
   rw [table_aux_eq_table_aux]
   split
@@ -246,10 +246,10 @@ theorem table_aux_forall (P : Finset (qs × qs) → Prop) (c : Finset (qs × qs)
     · apply fa
       exact b
     · apply fa
-termination_by table_aux_forall p => (@all_pairs q qs).card - c.card
+termination_by table_aux_forall p => (all_pairs t).card - c.card
 decreasing_by apply table_aux_decreasing t (by assumption) (by assumption)
 
-def ex_word_prop : Finset (qs × qs) → Prop := fun f => ∀ p : (qs × qs), p ∈ f → ∃ w : word σs, ¬(δ_star' t p.1 w ∈ t.fs ↔ δ_star' t p.2 w ∈ t.fs)
+def ex_word_prop : Finset (t.qs × t.qs) → Prop := fun f => ∀ p : (t.qs × t.qs), p ∈ f → ∃ w : word σs, ¬(δ_star' t p.1 w ∈ t.fs ↔ δ_star' t p.2 w ∈ t.fs)
 
 lemma exists_notaccepted_if_table_filling  : ex_word_prop t (table_aux t (start t) (start_subset_all t)) := by
   apply table_aux_forall
@@ -276,11 +276,11 @@ lemma exists_notaccepted_if_table_filling  : ex_word_prop t (table_aux t (start 
                apply distinct.step
                exact this
 
-lemma step_gt_if (c : Finset _)(a b : qs) (e : σs) : ⟨t.δ a e, t.δ b e⟩ ∈ c → ⟨a,b⟩ ∉ c → (step t c all_pairs).card > c.card := by
+lemma step_gt_if (c : Finset _)(a b : t.qs) (e : σs) : ⟨t.δ a e, t.δ b e⟩ ∈ c → ⟨a,b⟩ ∉ c → (step t c (all_pairs t)).card > c.card := by
   intro inc ninc
   simp only [step]
   apply Finset.card_lt_card
-  have : c ⊆ c ∪ filter (fun x => ∃ s, (DFA.δ t x.fst s, DFA.δ t x.snd s) ∈ c) all_pairs := by apply Finset.subset_union_left
+  have : c ⊆ c ∪ filter (fun x => ∃ s, (DFA.δ t x.fst s, DFA.δ t x.snd s) ∈ c) (all_pairs t) := by apply Finset.subset_union_left
   apply (Finset.ssubset_iff_of_subset this).mpr
   exists ⟨a,b⟩
   apply And.intro
@@ -300,19 +300,19 @@ lemma if_δ_in_table_aux_in_table_aux : ⟨t.δ a e, t.δ b e⟩ ∈ table_aux t
     · cases (Decidable.em (⟨a,b⟩ ∈ c)) with
       | inl h => exact h
       | inr h => have := step_gt_if t c a b e δ h
-                 have : card (step t c all_pairs) ≠ card c := by apply Nat.ne_of_gt
-                                                                 exact this
+                 have : card (step t c (all_pairs t)) ≠ card c := by apply Nat.ne_of_gt
+                                                                     exact this
                  contradiction
     · contradiction
   · split at δ
     · contradiction
     · apply if_δ_in_table_aux_in_table_aux
       · exact δ
-termination_by if_δ_in_table_aux_in_table_aux p => (@all_pairs q qs).card - c.card
+termination_by if_δ_in_table_aux_in_table_aux p => (all_pairs t).card - c.card
 decreasing_by apply table_aux_decreasing t (by assumption) (by assumption)
 
 
-lemma table_filling_if_exists (w : word σs) : (a b : qs) → ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) → distinct_table_filling t a b := by
+lemma table_filling_if_exists (w : word σs) : (a b : t.qs) → ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) → distinct_table_filling t a b := by
   simp only [distinct_table_filling,table_filling]
   induction w  with
   | nil => intro a b h
@@ -336,7 +336,7 @@ lemma table_filling_if_exists (w : word σs) : (a b : qs) → ¬(δ_star' t a w 
                      apply if_δ_in_table_aux_in_table_aux
                      exact δ
 
-theorem table_filling_iff_ex (a b : qs) : distinct_table_filling t a b ↔ ∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
+theorem table_filling_iff_ex (a b : t.qs) : distinct_table_filling t a b ↔ ∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   apply Iff.intro
   · intro d
     simp only [distinct_table_filling] at d
@@ -367,15 +367,15 @@ instance instDecNondistinct : Decidable (nondistinct t a b) := by
 
 -- Minimization of DFA using nondistinct states (table filling algorithm)
 
-def min_q : Finset (Finset qs) := qs.attach.biUnion (fun q => {qs.attach.filter (fun q' => nondistinct t q' q)})
+def min_q : Finset (Finset t.qs) := t.qs.attach.biUnion (fun q => {t.qs.attach.filter (fun q' => nondistinct t q' q)})
 
 def min_init : { x // x ∈ min_q t } := by
   simp only [min_q]
-  exact ⟨qs.attach.filter (fun q => nondistinct t q t.q₀), by rw [Finset.mem_biUnion]; exists t.q₀; rw [Finset.mem_singleton]; exact ⟨by simp, rfl⟩⟩
+  exact ⟨t.qs.attach.filter (fun q => nondistinct t q t.q₀), by rw [Finset.mem_biUnion]; exists t.q₀; rw [Finset.mem_singleton]; exact ⟨by simp, rfl⟩⟩
 
-def min_fs : Finset { x // x ∈ min_q t } := (min_q t).attach.filter (fun f => ∃ q : qs, q ∈ f.1 ∧ q ∈ t.fs)
+def min_fs : Finset { x // x ∈ min_q t } := (min_q t).attach.filter (fun f => ∃ q : t.qs, q ∈ f.1 ∧ q ∈ t.fs)
 
-theorem min_δ_step_in (a : { x // x ∈ min_q t }) : a.1.biUnion (fun a => (qs.attach).filter (fun b => nondistinct t b (t.δ a e))) ∈ min_q t := by
+theorem min_δ_step_in (a : { x // x ∈ min_q t }) : a.1.biUnion (fun a => (t.qs.attach).filter (fun b => nondistinct t b (t.δ a e))) ∈ min_q t := by
   simp only [min_q]
   simp only [min_q] at a
   have := a.2
@@ -413,12 +413,12 @@ theorem min_δ_step_in (a : { x // x ∈ min_q t }) : a.1.biUnion (fun a => (qs.
 
 def min_δ : { x // x ∈ min_q t } → { x // x ∈ σs } → { x // x ∈ min_q t } := by
   intro a e
-  let b := a.1.biUnion (fun a => (qs.attach).filter (fun b => nondistinct t b (t.δ a e)))
+  let b := a.1.biUnion (fun a => (t.qs.attach).filter (fun b => nondistinct t b (t.δ a e)))
   exact ⟨b , min_δ_step_in t a⟩
 
-def min_dfa : DFA σs (min_q t) := {q₀ := min_init t, fs := min_fs t, δ := min_δ t}
+def min_dfa : DFA σs (Finset t.qs) := {q₀ := min_init t, fs := min_fs t, δ := min_δ t}
 
-def state_eq_class (a : qs) : { x // x ∈ (min_q t) } := ⟨qs.attach.filter (fun q => nondistinct t q a), by simp [min_dfa,min_q]; exists a; exists (by simp)⟩
+def state_eq_class (a : t.qs) : { x // x ∈ (min_q t) } := ⟨t.qs.attach.filter (fun q => nondistinct t q a), by simp [min_dfa,min_q]; exists a; exists (by simp)⟩
 
 lemma step_eq_class_eq : state_eq_class t (DFA.δ t a e) = DFA.δ (min_dfa t) (state_eq_class t a) e := by
   simp only [state_eq_class,min_dfa,min_δ]
@@ -447,7 +447,7 @@ lemma step_eq_class_eq : state_eq_class t (DFA.δ t a e) = DFA.δ (min_dfa t) (s
       apply nondistinct_step
       exact ex₁.1.2
 
-theorem min_δ'_accepts_iff {w : word σs} : {a : qs} → (δ_star' t a w ∈ t.fs ↔ δ_star' (min_dfa t) (state_eq_class t a) w ∈ (min_dfa t).fs) := by
+theorem min_δ'_accepts_iff {w : word σs} : {a : t.qs} → (δ_star' t a w ∈ t.fs ↔ δ_star' (min_dfa t) (state_eq_class t a) w ∈ (min_dfa t).fs) := by
   induction w with
   | nil => intro a
            simp only [δ_star',state_eq_class,min_dfa,min_fs,min_q,Finset.mem_filter]
@@ -460,7 +460,6 @@ theorem min_δ'_accepts_iff {w : word σs} : {a : qs} → (δ_star' t a w ∈ t.
              · exists a
                apply Exists.intro
                · exact ⟨nondistinct_self t, ain⟩
-               · simp
            · intro h
              apply Exists.elim h.2
              intro q h
@@ -493,13 +492,13 @@ theorem min_min_eq {w : word σs} : dfa_accepts t w ↔ dfa_accepts (min_dfa (mi
     apply (min_reachable_min_eq t).mpr
     exact d
 
-theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.q₀ q)) ↔ (minimization_reachable_q t).card < qs.card := by
+theorem ex_unreachable_iff_notminimal : (∃ q : t.qs, ¬(reachable t t.q₀ q)) ↔ (minimization_reachable_q t).card < t.qs.card := by
   apply Iff.intro
   · intro ex
     apply Exists.elim ex
     intro a h
     simp only [minimization_reachable,minimization_reachable_q]
-    have : card (qs.attach) = card qs := by apply Finset.card_attach
+    have : card (t.qs.attach) = card t.qs := by apply Finset.card_attach
     rw [←this]
     apply Finset.card_lt_card
     apply Finset.filter_ssubset.mpr
@@ -509,15 +508,15 @@ theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.q₀ q)) �
     · exact h
   · intro lt
     simp only [minimization_reachable] at lt
-    have : card (qs.attach) = card qs := by apply Finset.card_attach
+    have : card (t.qs.attach) = card t.qs := by apply Finset.card_attach
     rw [←this] at lt
-    have h : minimization_reachable_q t ≠ qs.attach := by intro eq
-                                                          rw [←eq] at lt
-                                                          apply Nat.lt_irrefl
-                                                          exact lt
-    have : minimization_reachable_q t ⊆ qs.attach := by simp [minimization_reachable_q]
-    have : minimization_reachable_q t ⊂ qs.attach := by apply Finset.ssubset_iff_subset_ne.mpr
-                                                        exact ⟨this,h⟩
+    have h : minimization_reachable_q t ≠ t.qs.attach := by intro eq
+                                                            rw [←eq] at lt
+                                                            apply Nat.lt_irrefl
+                                                            exact lt
+    have : minimization_reachable_q t ⊆ t.qs.attach := by simp [minimization_reachable_q]
+    have : minimization_reachable_q t ⊂ t.qs.attach := by apply Finset.ssubset_iff_subset_ne.mpr
+                                                          exact ⟨this,h⟩
     have := Finset.ssubset_iff_exists_cons_subset.mp this
     apply Exists.elim this
     intro a ex
@@ -528,7 +527,7 @@ theorem ex_unreachable_iff_notminimal : (∃ q : qs, ¬(reachable t t.q₀ q)) �
     apply nin
     apply Finset.mem_attach
 
-theorem all_rechable_or : (∀ q : qs, reachable t t.q₀ q) → ∀ q : qs, q = t.q₀ ∨ ∃ q₂ : qs, ∃ s : σs, t.δ q₂ s = q := by
+theorem all_rechable_or : (∀ q : t.qs, reachable t t.q₀ q) → ∀ q : t.qs, q = t.q₀ ∨ ∃ q₂ : t.qs, ∃ s : σs, t.δ q₂ s = q := by
   intro fa
   intro q
   have := fa q
