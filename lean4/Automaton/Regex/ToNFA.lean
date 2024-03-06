@@ -100,7 +100,7 @@ theorem δ_star'_eq_union (q : Finset t.qs) : Finset.Nonempty (δ_step t q e ∩
   simp only [δ_star,δ_star',δ_step]
   simp only [δ_step] at h
   simp only [starNFA,starNFA_δ]
-  apply Finset.eq_iff_fa_mem.mpr
+  apply Finset.ext_iff.mpr
   intro q
   apply Iff.intro
   · intro h'
@@ -152,7 +152,7 @@ theorem δ_star'_eq_union (q : Finset t.qs) : Finset.Nonempty (δ_step t q e ∩
 lemma δ_step_star_eq (q : Finset t.qs): ¬Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_step (starNFA t) q e = δ_step t q e := by
   intro ne
   simp only [starNFA,starNFA_δ,δ_step]
-  rw [Finset.eq_iff_fa_mem]
+  rw [Finset.ext_iff]
   intro e'
   apply Iff.intro
   · intro ein

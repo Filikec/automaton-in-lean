@@ -8,6 +8,11 @@
         "string": "cpp",
         "xstring": "cpp",
         "algorithm": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "iterator": "cpp",
+        "deque": "cpp",
+        "chrono": "cpp",
+        "span": "cpp",
+        "initializer_list": "cpp"
     }
 }
