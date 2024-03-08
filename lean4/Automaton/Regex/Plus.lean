@@ -10,7 +10,7 @@ open NFA
 
 namespace Plus
 
-variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ] (xs : Finset {x // x ∈ σs})
+variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t s : NFA σs) [DecidableEq σ] (xs : Finset {x // x ∈ σs})
 
 def plus_qs : Finset ({ x // x ∈ t.qs } ⊕ { x // x ∈ s.qs }) := Finset.disjSum t.qs.attach s.qs.attach
 
@@ -39,7 +39,7 @@ def plus_δ : { x // x ∈ plus_qs t s } → { x // x ∈ σs } → Finset { x /
   | inr h => exact lift_inr t s (s.δ h e)
 
 
-def plus_nfa : NFA σs ({ x // x ∈ t.qs } ⊕ { x // x ∈ s.qs }) := {qs := plus_qs t s, q₀ := plus_q₀ t s, fs:= plus_fs t s, δ := plus_δ t s}
+def plus_nfa : NFA σs  := {qs := plus_qs t s, q₀ := plus_q₀ t s, fs:= plus_fs t s, δ := plus_δ t s}
 
 theorem plus_eq : δ_star (plus_nfa t s) w = lift_inl t s (δ_star t w) ∪ lift_inr t s (δ_star s w) := by
   induction w using List.reverseRecOn with

@@ -26,29 +26,34 @@ import Automaton.Fintype.List
 namespace DFA
 
 
-structure DFA (σs : Finset σ) (q : Type _) where
+structure DFA (σs : Finset σ) where
+  q : Type _
   qs : Finset q    -- set of states
   q₀ : qs          -- initial state
   fs : Finset qs   -- accepting states
   δ : qs → σs → qs -- transition function
+  [d₁ : DecidableEq σ]
+  [d₂ : DecidableEq q]
 
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s t : DFA σs q)
+variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s t : DFA σs)
 
+instance decEqQ : DecidableEq t.q := t.d₂
+instance decEqσ : DecidableEq σ := t.d₁
 
 -- ToString
-instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σs q) where
-  toString t := by
-    have s : List String := (fσ.toList).map toString
-    have q : String := toString t.q₀
-    have qss : List String :=  (fq.toList).map toString
-    have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map toString
-    have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ t.qs ∧ b ∈ σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
-    exact "Σ: { " ++ String.join (s.map (fun e => e++" ")) ++ "}\n" ++
-          "Q: { " ++ String.join (qss.map (fun e => e++" ")) ++ "}\n" ++
-          "δ: " ++ String.join (δ.map (fun e => "\n   "++e)) ++ "\n" ++
-          "q₀: " ++ q ++ "\n" ++
-          "F: { " ++ String.join (fs.map (fun e => e++" ")) ++ "}\n"
+-- instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σs) where
+--   toString t := by
+--     have s : List String := (fσ.toList).map toString
+--     have q : String := toString t.q₀
+--     have qss : List String :=  (fq.toList).map toString
+--     have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map toString
+--     have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ t.qs ∧ b ∈ σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
+--     exact "Σ: { " ++ String.join (s.map (fun e => e++" ")) ++ "}\n" ++
+--           "Q: { " ++ String.join (qss.map (fun e => e++" ")) ++ "}\n" ++
+--           "δ: " ++ String.join (δ.map (fun e => "\n   "++e)) ++ "\n" ++
+--           "q₀: " ++ q ++ "\n" ++
+--           "F: { " ++ String.join (fs.map (fun e => e++" ")) ++ "}\n"
 
 
 -- δ* function
@@ -92,7 +97,7 @@ theorem reachable.trans (a b c : t.qs) : reachable t a b → reachable t b c →
 -- DFA language is decidable
 instance decidableLang (w : word σs) : Decidable (dfa_accepts t w) := by
   simp only [dfa_accepts]
-  apply Finset.decidableMem
+  apply Finset.decidableMem _ _
 
 
 -- dfa accepts nil iff s is final

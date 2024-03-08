@@ -8,8 +8,8 @@ import Automaton.NFA.ENFA
 
 open NFA DFA εNFA
 
-def Q₁ : Finset (Fin 2) := {0,1}
-def σ₁ : Finset (Fin 2) := {0,1}
+def Q₁ : Finset Nat := {0,1}
+def σ₁ : Finset Nat := {0,1}
 
 def δ₁ : Q₁ → σ₁ → Finset Q₁
   | ⟨0, _⟩ , ⟨1,_⟩ => {⟨1,by simp⟩}
@@ -17,7 +17,7 @@ def δ₁ : Q₁ → σ₁ → Finset Q₁
   | ⟨1, _⟩ , ⟨1,_⟩ => {⟨1,by simp⟩}
   | ⟨1, _⟩ , ⟨0,_⟩ => {⟨0,by simp⟩}
 
-def nfa₁ : NFA Q₁ (Fin 2) := {q₀ := ⟨0,by simp⟩, fs := {⟨1,by simp⟩} , δ := δ₁}
+def nfa₁ : NFA σ₁ := {q₀ := {⟨0,by simp⟩}, fs := {⟨1,by simp⟩} , δ := δ₁}
 
 def w₁₁ : word σ₁ := []
 def w₁₂ : word σ₁ := [⟨1, by simp⟩ , ⟨0, by simp⟩]
@@ -36,8 +36,8 @@ def w₁₃ : word σ₁ := [⟨0, by simp⟩ , ⟨1, by simp⟩]
 #eval nfa_accepts (ToNFA.dfa_to_nfa (ToDFA.nfa_to_dfa nfa₁)) w₁₃
 
 
-def Q₂ : Finset (Fin 4) := {0,1,2,3}
-def σ₂ : Finset (Fin 3) := {0,1,2}
+def Q₂ : Finset Nat := {0,1,2,3}
+def σ₂ : Finset Nat := {0,1,2}
 
 def δ₂ : Q₂ → Option σ₂ → Finset Q₂
   | ⟨0, _⟩ , some ⟨0,_⟩ => {⟨0,by simp⟩}
@@ -48,8 +48,7 @@ def δ₂ : Q₂ → Option σ₂ → Finset Q₂
   | _ , _ => ∅
 
 -- accepts any number of 0s followed by any number of 1s followed by exactly one 2
-def εnfa₂ : εNFA σ₂ (Fin 4) := {q₀ := ⟨0,by simp⟩, fs := {⟨3,by simp⟩}, δ := δ₂}
-
+def εnfa₂ : εNFA σ₂ := {q₀ := {⟨0,by simp⟩}, fs := {⟨3,by simp⟩}, δ := δ₂}
 
 def w₂₁ : word σ₂ := []
 def w₂₂ : word σ₂ := [⟨0,by simp⟩]

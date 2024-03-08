@@ -8,12 +8,12 @@ open NFA ToDFA
 
 namespace Star
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs) [DecidableEq σ] [DecidableEq q]
 
 
 def starNFA_δ : t.qs → σs → Finset t.qs := fun q σ => if Finset.Nonempty (t.δ q σ ∩ t.fs) then t.δ q σ ∪ t.q₀ else t.δ q σ
 
-def starNFA : NFA σs q := {q₀ := t.q₀, fs := t.fs, δ := starNFA_δ t}
+def starNFA : NFA σs := {q₀ := t.q₀, fs := t.fs, δ := starNFA_δ t}
 
 lemma fs_eq : t.fs = (starNFA t).fs := by simp [starNFA]
 

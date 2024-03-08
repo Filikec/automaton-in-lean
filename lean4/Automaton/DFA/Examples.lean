@@ -20,13 +20,15 @@ def δ₁ : Q → σ → Q
   | ⟨1,_⟩ , ⟨1,_⟩ => ⟨0, by simp⟩
 
 -- accepts all words that end with '1'
-def last_is_one : DFA Q (Fin 2) := {q₀ := ⟨0, by simp⟩ , fs := {⟨1 , by simp⟩} , δ := δ₁}
+def last_is_one : DFA σ  := {qs := Q, q₀ := ⟨0, by simp⟩ , fs := {⟨1 , by simp⟩} , δ := δ₁}
 
-def w₁ : word (Fin 2) := [ 1, 0 ]
-def w₂ : word (Fin 2) := [ 0, 1 ]
-def w₃ : word (Fin 2) := [ ]
+def w₁ : word Q := [ ⟨1 , by simp⟩, ⟨0 , by simp⟩ ]
+def w₂ : word Q := [ ⟨0 , by simp⟩, ⟨1 , by simp⟩ ]
+def w₃ : word Q := [ ]
 
-#eval last_is_one
+#eval dfa_accepts last_is_one w₁
+#eval dfa_accepts last_is_one w₂
+#eval dfa_accepts last_is_one w₃
 
 def q₁ : Q := ⟨0, by simp⟩
 def q₂ : Q := ⟨1, by simp⟩

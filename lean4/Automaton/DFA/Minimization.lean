@@ -7,27 +7,27 @@ open DFA Finset
 
 namespace DFA
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s t : DFA σs q)
+variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s t : DFA σs)
 
 @[simp]
-def minimization_reachable_q (t : DFA σs q) : Finset t.qs := t.qs.attach.filter (fun q => reachable t t.q₀ q)
+def minimization_reachable_q (t : DFA σs ) : Finset t.qs := t.qs.attach.filter (fun q => reachable t t.q₀ q)
 
 @[simp]
-def minimization_reachable_init (t : DFA σs q) : { x // x ∈ minimization_reachable_q t } := by
+def minimization_reachable_init (t : DFA σs ) : { x // x ∈ minimization_reachable_q t } := by
   exact ⟨t.q₀ , by simp only [minimization_reachable_q,Finset.mem_filter]; exact ⟨by simp,reachable.base⟩⟩
 
 @[simp]
-def minimization_reachable_fs (t : DFA σs q) : Finset {x // x ∈ minimization_reachable_q t} :=
+def minimization_reachable_fs (t : DFA σs ) : Finset {x // x ∈ minimization_reachable_q t} :=
   (minimization_reachable_q t).attach.filter (fun q => q.1 ∈ t.fs)
 
 @[simp]
-def minimization_reachable_δ (t : DFA σs q) : { x // x ∈ minimization_reachable_q t } → σs → { x // x ∈ minimization_reachable_q t } := by
+def minimization_reachable_δ (t : DFA σs ) : { x // x ∈ minimization_reachable_q t } → σs → { x // x ∈ minimization_reachable_q t } := by
   intro q e
   have := q.2
   simp at this
   exact ⟨ t.δ q e, by simp; apply reachable.step; exact this⟩
 
-def minimization_reachable (t : DFA σs q) : DFA σs t.qs :=
+def minimization_reachable (t : DFA σs ) : DFA σs  :=
   {q₀ := minimization_reachable_init t, fs := minimization_reachable_fs t, δ := minimization_reachable_δ t}
 
 lemma minimization_reachable_δ_star'_eq (w : word σs) : (q : t.qs) → (r : reachable t t.q₀ q) → δ_star' t q w = (δ_star' (minimization_reachable t) ⟨q, by simp [minimization_reachable]; exact r⟩  w).1 := by
@@ -416,7 +416,7 @@ def min_δ : { x // x ∈ min_q t } → { x // x ∈ σs } → { x // x ∈ min_
   let b := a.1.biUnion (fun a => (t.qs.attach).filter (fun b => nondistinct t b (t.δ a e)))
   exact ⟨b , min_δ_step_in t a⟩
 
-def min_dfa : DFA σs (Finset t.qs) := {q₀ := min_init t, fs := min_fs t, δ := min_δ t}
+def min_dfa : DFA σs  := {q₀ := min_init t, fs := min_fs t, δ := min_δ t}
 
 def state_eq_class (a : t.qs) : { x // x ∈ (min_q t) } := ⟨t.qs.attach.filter (fun q => nondistinct t q a), by simp [min_dfa,min_q]; exists a; exists (by simp)⟩
 

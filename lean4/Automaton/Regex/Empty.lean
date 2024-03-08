@@ -10,12 +10,12 @@ open NFA
 
 namespace Empty
 
-variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ]
+variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs ) [DecidableEq σ]
 
 
-def empty : NFA σs Nat := {qs := {1}, q₀ := {⟨1,by simp⟩}, fs := {⟨1,by simp⟩}, δ := fun _ _ => {} }
+def empty : NFA σs := {qs := {1} , q₀ := {⟨1,by simp⟩}, fs := {⟨1,by simp⟩}, δ := fun _ _ => {} }
 
-theorem accpets_iff : nfa_accepts empty w ↔ w = [] := by
+theorem accpets_iff (w : word σs) : nfa_accepts empty w ↔ w = [] := by
   apply Iff.intro
   · simp only [nfa_accepts]
     intro ne

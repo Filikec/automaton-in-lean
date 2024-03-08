@@ -10,7 +10,7 @@ open NFA
 
 namespace Append
 
-variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ] (xs : Finset {x // x ∈ σs}) (w : word σs)
+variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs) (s : NFA σs) [DecidableEq σ] (xs : Finset {x // x ∈ σs}) (w : word σs)
 
 def append_qs : Finset ({ x // x ∈ t.qs } ⊕ { x // x ∈ s.qs }) := Finset.disjSum t.qs.attach s.qs.attach
 
@@ -41,7 +41,7 @@ def append_δ : { x // x ∈ append_qs t s } → { x // x ∈ σs } → Finset {
   | inr h => exact lift_inr t s (s.δ h e)
 
 
-def append_nfa : NFA σs ({ x // x ∈ t.qs } ⊕ { x // x ∈ s.qs }) := {qs := append_qs t s, q₀ := append_q₀ t s, fs:= append_fs t s, δ := append_δ t s}
+def append_nfa : NFA σs  := {qs := append_qs t s, q₀ := append_q₀ t s, fs:= append_fs t s, δ := append_δ t s}
 
 lemma fs_eq : append_fs t s = lift_inr t s s.fs := by simp [append_fs]
 

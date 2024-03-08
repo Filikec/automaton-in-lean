@@ -13,10 +13,10 @@ open DFA NFA
 
 namespace ToNFA
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s td : DFA σs q)
+variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s td : DFA σs)
 
 -- conversion from nfa to dfa
-def dfa_to_nfa : NFA σs q := {q₀ := {td.q₀} , fs := td.fs , δ := fun q e => {td.δ q e} }
+def dfa_to_nfa : NFA σs := {q₀ := {td.q₀} , fs := td.fs , δ := fun q e => {td.δ q e} }
 
 -- the δ_star function remains the same (but NFA produces singletons)
 theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : td.qs) → {DFA.δ_star' td q w} = NFA.δ_star' (dfa_to_nfa td) {q} w := by

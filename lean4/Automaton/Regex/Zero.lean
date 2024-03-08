@@ -10,9 +10,9 @@ open NFA
 
 namespace Zero
 
-variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ]
+variable {σ : Type _} (q₁ q₂ : Type _) {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] [DecidableEq σ]
 
-def zeroNfa : NFA σs Nat := {qs := {}, q₀ := {}, fs := {}, δ := fun _ _ => {}}
+def zeroNfa : NFA σs := {q := Nat, qs := {}, q₀ := {}, fs := {}, δ := fun _ _ => {}}
 
 theorem not_accepts (w : word σs) : ¬nfa_accepts zeroNfa w := by
   intro acc

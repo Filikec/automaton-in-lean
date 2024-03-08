@@ -10,7 +10,7 @@ open NFA
 
 namespace Char
 
-variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ]
+variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t s : NFA σs )[DecidableEq σ]
 
 def char_qs : Finset ℕ := {1,2}
 
@@ -18,7 +18,7 @@ def char_δ (a : σs) : char_qs → σs → Finset char_qs
   | ⟨1, _⟩ , s => if s = a then {⟨2, by simp⟩} else {}
   | _ , _ => {}
 
-def char (a : σs) : NFA σs Nat := {qs := char_qs, q₀ := {⟨1,by simp⟩}, fs := {⟨2,by simp⟩}, δ := char_δ a }
+def char (a : σs) : NFA σs := {qs := char_qs, q₀ := {⟨1,by simp⟩}, fs := {⟨2,by simp⟩}, δ := char_δ a }
 
 theorem accpets_iff (a : σs) : nfa_accepts (char a) w ↔ w = [a] := by
   simp only [nfa_accepts,char]

@@ -11,14 +11,20 @@ open NFA Finset DFA
 
 namespace εNFA
 
-structure εNFA (σs : Finset σ) (q : Type _) where
+structure εNFA (σs : Finset σ) where
+  q : Type _
   qs : Finset q                  -- states
   q₀ : Finset qs                 -- initial state
   fs : Finset qs                 -- accepting states
   δ : qs → Option σs → Finset qs -- transition function
+  [d₁ : DecidableEq q]
+  [d₂ : DecidableEq σ]
 
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} (tn : εNFA σs q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} (tn : εNFA σs) [DecidableEq σ] [DecidableEq q]
+
+instance decEqQ : DecidableEq tn.q := tn.d₁
+instance decEq : DecidableEq σ := tn.d₂
 
 def εclosure (f : Finset tn.qs) : Finset tn.qs := by
   let newF := f.biUnion (fun q => tn.δ q none) ∪ f
@@ -136,14 +142,19 @@ def εnfa_to_nfa_δ :  { x // x ∈ εnfa_to_nfa_q tn } → σs → Finset { x /
   exact {⟨ this , all_in_q tn this⟩}
 
 @[simp]
-def εnfa_to_nfa : NFA σs (Finset tn.qs) :=
+def εnfa_to_nfa : NFA σs :=
   {q₀ := {εnfa_to_nfa_init tn}, fs := εnfa_to_nfa_fs tn, δ := εnfa_to_nfa_δ tn}
 
 theorem δ_star'_eq (w : word σs): (q : Finset tn.qs) → {⟨(εNFA.δ_star' tn q w) , all_in_q tn  (εNFA.δ_star' tn q w)⟩} = NFA.δ_star' (εnfa_to_nfa tn) {⟨εclosure tn q , all_in_q tn _⟩} w := by
   induction w with
   | nil => simp [δ_star']
   | cons a as s => intro q
-                   simp [NFA.δ_star',δ_star',s]
+                   simp only [NFA.δ_star',δ_star',s]
+                   apply congr
+                   · apply congr
+                     · rfl
+                     · simp
+                   · rfl
 
 theorem δ_star_eq (w : word σs) : {⟨εNFA.δ_star tn w , all_in_q tn (εNFA.δ_star tn w)⟩ } = NFA.δ_star (εnfa_to_nfa tn) w := by
   simp only [δ_star]

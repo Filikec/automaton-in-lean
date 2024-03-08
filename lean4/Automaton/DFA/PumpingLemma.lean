@@ -3,7 +3,7 @@ import Mathlib.Data.Fintype.Card
 
 namespace DFA
 
-variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (dfa : DFA σs q)
+variable {σ : Type _}  {σs : Finset σ}  [DecidableEq σ] (dfa : DFA σs)
 
 -- based on proof in mathlib4 Computability/DFA
 

@@ -12,15 +12,20 @@ import Automaton.Regex.Basic
 
 namespace NFA
 
-structure NFA (σs : Finset σ) (q : Type _) where
+structure NFA (σs : Finset σ) where
+  q : Type _
   qs : Finset q
   q₀ : Finset qs          -- initial state
   fs : Finset qs          -- accepting states
   δ : qs → σs → Finset qs -- transition function
+  [d₁ : DecidableEq q]
+  [d₂ : DecidableEq σ]
 
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs) [DecidableEq σ] [DecidableEq q]
 
+instance decEqQ : DecidableEq t.q := t.d₁
+instance decEqσ : DecidableEq σ := t.d₂
 
 -- one step in the operation of NFA, consuming one character
 -- take the union of all sets of states reachable from current set of states
