@@ -12,7 +12,7 @@ open NFA DFA Finset
 
 namespace ToDFA
 
-variable {σ : Type _} {q : Type _} {σs : Finset σ} (r s tn : NFA σs q) [DecidableEq σ] [DecidableEq q]
+variable {σ : Type _} {q : Type _} {q₁ : Type _}  {σs : Finset σ} (tn : NFA σs q) [DecidableEq σ] [DecidableEq q] [DecidableEq q₁]  (r : NFA σs q₁)
 
 @[simp]
 def nfa_to_dfa_q : Finset (Finset tn.qs) := tn.qs.attach.powerset
@@ -78,5 +78,60 @@ instance instDecidableExWNeNil : Decidable (∃ a, a ∈ nfaLang tn ∧ a ≠ []
                  exists w
                  rw [←nfa_to_dfa_eq]
                  apply hin
+
+instance decExPrefix : Decidable (∃ a b, nfa_accepts tn a ∧ a ++ b = w) := by
+  have h : Decidable (∃ a b, DFA.dfa_accepts (nfa_to_dfa tn) a ∧ a ++ b = w) := by infer_instance
+  match h with
+  | isTrue h => apply isTrue
+                apply Exists.elim h
+                intro a ex
+                apply Exists.elim ex
+                intro b h
+                rw [←nfa_to_dfa_eq] at h
+                exists a
+                exists b
+  | isFalse h => apply isFalse
+                 intro h'
+                 apply h
+                 apply Exists.elim h'
+                 intro a ex
+                 apply Exists.elim ex
+                 intro b h
+                 rw [nfa_to_dfa_eq] at h
+                 exists a
+                 exists b
+
+instance decExSplit  : Decidable (∃ a b, nfa_accepts r a ∧ nfa_accepts tn b ∧ a ++ b = w) := by
+  have f : Fintype {p : List σs // p.length <= w.length} := by infer_instance
+  have h : Decidable (∃ a, a ∈ f.elems ∧ (fun a => nfa_accepts r a ∧ ∃ b, b ∈ f.elems ∧ nfa_accepts tn b ∧ a++b = w) a) := Finset.decidableExistsAndFinset
+  match h with
+  | isTrue t => apply isTrue
+                apply Exists.elim t
+                intro l la
+                exists l
+                apply Exists.elim la.2.2
+                intro lb h
+                exists lb
+                exact ⟨la.2.1,h.2.1,h.2.2⟩
+  | isFalse g => apply isFalse
+                 intro ex
+                 apply g
+                 apply Exists.elim ex
+                 intro a ex
+                 apply Exists.elim ex
+                 intro b h
+                 have t₁ := List.length_append a b
+                 have t₂ : List.length a + List.length b = List.length w := by rw [←t₁,←h.2.2]
+                 have h₁ : List.length a <= List.length w := by rw [←t₂]; simp
+                 have h₂ : List.length b <= List.length w := by rw [←t₂]; simp
+                 exists ⟨a,h₁⟩
+                 apply And.intro
+                 · apply Fintype.complete
+                 · simp only []
+                   apply And.intro
+                   · exact h.1
+                   · exists ⟨b,h₂⟩
+                     exact ⟨Fintype.complete _,h.2.1,h.2.2⟩
+
 
 end ToDFA

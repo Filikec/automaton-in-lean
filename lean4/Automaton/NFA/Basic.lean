@@ -85,4 +85,11 @@ theorem δ_subset_δ_step {q : Finset t.qs} (h : a ∈ q) : t.δ a e ⊆ δ_step
   apply Finset.subset_biUnion_of_mem (fun n => NFA.δ t n e)
   exact h
 
+theorem δ_star'_empty : δ_star' t ∅ w = ∅ := by
+  induction w with
+  | nil => simp
+  | cons e es s => simp; assumption
+
+
+
 end NFA

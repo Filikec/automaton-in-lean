@@ -8,7 +8,7 @@ import Mathlib.Logic.Embedding.Basic
 
 open NFA
 
-namespace PlusNFA
+namespace Plus
 
 variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁] [DecidableEq q₂] (t : NFA σs q₁) (s : NFA σs q₂) [DecidableEq σ] (xs : Finset {x // x ∈ σs})
 
@@ -269,7 +269,7 @@ theorem plus_eq : δ_star (plus_nfa t s) w = lift_inl t s (δ_star t w) ∪ lift
                        exact bin
 
 
-theorem plus_nfa_correct : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_accepts s w := by
+theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_accepts s w := by
   simp only [nfa_accepts]
   apply Iff.intro
   · intro h
@@ -333,3 +333,4 @@ theorem plus_nfa_correct : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ 
         exact xin.1
       · simp [plus_nfa,plus_fs]
         exact xin.2
+end Plus

@@ -6,7 +6,7 @@ import Automaton.Language.Basic
 
 open NFA ToDFA
 
-namespace StarNFA
+namespace Star
 
 variable {σ : Type _} {q : Type _} {σs : Finset σ} (t : NFA σs q) [DecidableEq σ] [DecidableEq q]
 
@@ -89,10 +89,10 @@ theorem δ_step_inter_nonempty (q : Finset t.qs) : Finset.Nonempty (δ_step (sta
       · exists a
       · exact xin.2
   · intro h
-    have ss : q ⊆ q := by simp
     apply Finset.nonempty_inter_subset
-    · apply δ_step_subset _ ss
-    · apply h
+    · apply δ_step_subset _ (Finset.subset_of_eq (Eq.refl q))
+    · simp only [starNFA]; apply Finset.subset_of_eq (Eq.refl t.fs)
+    · exact h
 
 
 theorem δ_star'_eq_union (q : Finset t.qs) : Finset.Nonempty (δ_step t q e ∩ t.fs) → δ_star' (starNFA t) q [e] = δ_star' t q [e] ∪ t.q₀ := by
@@ -165,6 +165,7 @@ lemma δ_step_star_eq (q : Finset t.qs): ¬Finset.Nonempty (δ_step t q e ∩ t.
       apply ne
       apply Finset.nonempty_inter_subset
       · exact δ_subset_δ_step t ain.1
+      · apply Finset.subset_of_eq (Eq.refl _)
       · assumption
     · exists a
   · intro ein
@@ -187,7 +188,8 @@ theorem nfa_accepts_starNFA : nfa_accepts t w → nfa_accepts (starNFA t) w := b
   apply Finset.nonempty_inter_subset
   · apply δ_star'_subset t
   · simp only [starNFA]
-    exact h
+    exact Finset.subset_of_eq (Eq.refl _)
+  · exact h
 
 theorem starNFA_accepts_start_subset : nfa_accepts (starNFA t) w → (starNFA t).q₀ ⊆ δ_star (starNFA t) w := by
   intro h
@@ -309,7 +311,7 @@ theorem accepts_or_ex_prefix : w ∈ nfaLang (starNFA t) → (w ∈ nfaLang t �
   apply accepts_or_ex_prefix_state
 
 
-theorem starNFA_accepts_plusLang : w ∈ nfaLang (starNFA t) ↔ w ∈ Regex.plusLang (nfaLang t) := by
+theorem starNFA_accepts_iff : w ∈ nfaLang (starNFA t) ↔ w ∈ Regex.plusLang (nfaLang t) := by
   simp only [nfaLang]
   apply Iff.intro
   · intro win
@@ -333,13 +335,13 @@ theorem starNFA_accepts_plusLang : w ∈ nfaLang (starNFA t) ↔ w ∈ Regex.plu
         exact h.1
       apply Regex.plusLang.extend
       · exact h.2.2.1
-      · apply starNFA_accepts_plusLang.mp -- b is always smaller, so must terminate
+      · apply starNFA_accepts_iff.mp -- b is always smaller, so must terminate
         exact h.2.2.2
   · intro h
     induction h with
     | empty h hin => apply nfa_accepts_starNFA t hin
     | extend a b h _ s => apply starNFA_accepts_append t (nfa_accepts_starNFA t h) s
 
-termination_by starNFA_accepts_plusLang => w.length
+termination_by starNFA_accepts_iff => w.length
 
-end StarNFA
+end Star

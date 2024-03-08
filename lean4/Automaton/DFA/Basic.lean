@@ -637,6 +637,43 @@ instance decAcceptsNeNil : Decidable (∃ w, dfa_accepts t w ∧ w ≠ []) := by
                                              exists w
 
 
+instance decExPrefix : Decidable (∃ a b, dfa_accepts t a ∧ a ++ b = w) := by
+  have f : Fintype {p : List σs // p.length <= w.length} := by infer_instance
+  have h : Decidable (∃ l, l ∈ f.elems ∧ (fun l => ∃ b, b ∈ f.elems ∧ l.1++b.1 = w ∧ dfa_accepts t l.1) l) := Finset.decidableExistsAndFinset
+  match h with
+  | isTrue t => apply isTrue
+                apply Exists.elim t
+                intro l la
+                exists l
+                simp at la
+                apply Exists.elim la.2
+                intro lb h
+                exists lb
+                simp only [dfa_accepts]
+                use h.2.2
+                exact h.2.1
+  | isFalse g => apply isFalse
+                 intro ex
+                 apply g
+                 apply Exists.elim ex
+                 intro a ex
+                 apply Exists.elim ex
+                 intro b h
+                 have t₁ := List.length_append a b
+                 have t₂ : List.length a + List.length b = List.length w := by rw [←t₁,←h.2]
+                 have h₁ : List.length a <= List.length w := by rw [←t₂]; simp
+                 have h₂ : List.length b <= List.length w := by rw [←t₂]; simp
+                 exists ⟨a,h₁⟩
+                 apply And.intro
+                 · apply Fintype.complete
+                 · simp
+                   exists b
+                   apply And.intro
+                   · exists h₂
+                     apply Fintype.complete
+                   · rw [And.comm]
+                     exact h
+
 
 
 

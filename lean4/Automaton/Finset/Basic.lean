@@ -156,7 +156,7 @@ theorem biUnion_union [DecidableEq β] (a b : Finset α) (f : α → Finset β) 
       exact ⟨mem_union_right _ ein.1,ein.2⟩
 
 
-theorem nonempty_inter_subset {a b c : Finset α} (h : a ⊆ c) : Finset.Nonempty (a ∩ b) → Finset.Nonempty (c ∩ b) := by
+theorem nonempty_inter_subset {a b c : Finset α} (h₁ : a ⊆ c) (h₂ : b ⊆ d): Finset.Nonempty (a ∩ b) → Finset.Nonempty (c ∩ d) := by
   intro ne
   rw [Finset.Nonempty]
   rw [Finset.Nonempty] at ne
@@ -167,8 +167,10 @@ theorem nonempty_inter_subset {a b c : Finset α} (h : a ⊆ c) : Finset.Nonempt
   rw [Finset.mem_inter] at xin
   apply And.intro
   · apply Finset.mem_of_subset
-    · exact h
+    · exact h₁
     · exact xin.1
-  · exact xin.2
+  · apply Finset.mem_of_subset
+    · exact h₂
+    · exact xin.2
 
 end Finset
