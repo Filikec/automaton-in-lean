@@ -1,12 +1,9 @@
-import Automaton.NFA.Basic
-import Automaton.NFA.ToDFA
-import Automaton.Regex.Basic
-import Automaton.DFA.Basic
-import Automaton.Language.Basic
 import Mathlib.Data.Finset.Sum
 import Mathlib.Logic.Embedding.Basic
+import Automaton.NFA.Basic
 
 open NFA
+
 
 namespace Char
 
@@ -20,7 +17,7 @@ def char_δ (a : σs) : char_qs → σs → Finset char_qs
 
 def char (a : σs) : NFA σs := {qs := char_qs, q₀ := {⟨1,by simp⟩}, fs := {⟨2,by simp⟩}, δ := char_δ a }
 
-theorem accpets_iff (a : σs) : nfa_accepts (char a) w ↔ w = [a] := by
+theorem accepts_iff (a : σs) : nfa_accepts (char a) w ↔ w = [a] := by
   simp only [nfa_accepts,char]
   apply Iff.intro
   · intro ne

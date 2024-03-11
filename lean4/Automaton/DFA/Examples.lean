@@ -1,7 +1,7 @@
-import Automaton.DFA.Basic
-import Automaton.DFA.Minimization
 import Mathlib.Data.Nat.Basic
 import Mathlib.Data.Fin.Basic
+import Automaton.DFA.Basic
+import Automaton.DFA.Minimization
 
 /-!
   Concrete examples of DFA

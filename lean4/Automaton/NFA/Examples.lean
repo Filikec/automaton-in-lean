@@ -1,6 +1,6 @@
 import Automaton.NFA.Basic
-import Automaton.DFA.Minimization
 import Automaton.DFA.ToNFA
+import Automaton.DFA.Minimization
 import Automaton.NFA.ToDFA
 import Automaton.NFA.ENFA
 

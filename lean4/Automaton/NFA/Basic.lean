@@ -1,9 +1,8 @@
 import Mathlib.Data.Set.Lattice
-import Automaton.Language.Basic
-import Automaton.Finset.Basic
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.FinEnum
-import Automaton.Regex.Basic
+import Automaton.Language.Basic
+import Automaton.Finset.Basic
 
 /-!
   This file contains the definition of NFA as well as a few fundemantal operations

@@ -1,13 +1,14 @@
-import Automaton.Language.Basic
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.FinEnum
-import Automaton.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.List
 import Mathlib.Data.Vector.Basic
 import Mathlib.Data.List.Card
 import Automaton.Finset.Basic
 import Automaton.Fintype.List
+import Automaton.Language.Basic
+
+
 
 /-!
   This file contains the definition of a DFA as well as a few fundamental operations it can do

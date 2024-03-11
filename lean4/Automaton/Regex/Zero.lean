@@ -1,10 +1,6 @@
-import Automaton.NFA.Basic
-import Automaton.NFA.ToDFA
-import Automaton.Regex.Basic
-import Automaton.DFA.Basic
-import Automaton.Language.Basic
 import Mathlib.Data.Finset.Sum
 import Mathlib.Logic.Embedding.Basic
+import Automaton.NFA.Basic
 
 open NFA
 

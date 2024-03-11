@@ -1,5 +1,5 @@
-import Automaton.DFA.Basic
 import Mathlib.Data.Fintype.Card
+import Automaton.DFA.Basic
 
 namespace DFA
 

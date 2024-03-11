@@ -1,10 +1,6 @@
-import Automaton.NFA.Basic
-import Automaton.NFA.ToDFA
-import Automaton.Regex.Basic
-import Automaton.DFA.Basic
-import Automaton.Language.Basic
 import Mathlib.Data.Finset.Sum
 import Mathlib.Logic.Embedding.Basic
+import Automaton.NFA.Basic
 
 open NFA
 
@@ -15,7 +11,7 @@ variable {σ : Type _} {q₁ q₂ : Type _} {σs : Finset σ}  [DecidableEq q₁
 
 def empty : NFA σs := {qs := {1} , q₀ := {⟨1,by simp⟩}, fs := {⟨1,by simp⟩}, δ := fun _ _ => {} }
 
-theorem accpets_iff (w : word σs) : nfa_accepts empty w ↔ w = [] := by
+theorem accepts_iff (w : word σs) : nfa_accepts empty w ↔ w = [] := by
   apply Iff.intro
   · simp only [nfa_accepts]
     intro ne

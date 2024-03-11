@@ -1,6 +1,6 @@
+import Mathlib.Data.Finset.Powerset
 import Automaton.NFA.Basic
 import Automaton.DFA.Basic
-import Mathlib.Data.Finset.Powerset
 
 /-!
   This file contains conversion from NFA to DFA `nfa_to_dfa`

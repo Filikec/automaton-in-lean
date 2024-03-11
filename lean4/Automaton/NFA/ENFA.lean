@@ -1,11 +1,12 @@
 import Mathlib.Data.Option.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Finset.Powerset
 import Automaton.Language.Basic
 import Automaton.Finset.Basic
-import Mathlib.Data.Nat.Basic
-import Automaton.NFA.Basic
-import Mathlib.Data.Finset.Powerset
 import Automaton.DFA.Basic
+import Automaton.NFA.Basic
 import Automaton.NFA.ToDFA
+
 
 open NFA Finset DFA
 

@@ -1,7 +1,7 @@
-import Automaton.DFA.Basic
-import Automaton.Finset.Basic
 import Mathlib.Data.FinEnum
 import Mathlib.Data.List.Basic
+import Automaton.DFA.Basic
+import Automaton.Finset.Basic
 
 open DFA Finset
 
