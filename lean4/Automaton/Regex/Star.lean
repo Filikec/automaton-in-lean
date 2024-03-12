@@ -306,7 +306,7 @@ theorem accepts_or_ex_prefix_state : (q : Finset t.qs) → Finset.Nonempty (δ_s
                               · exact h
 
 
-theorem accepts_iff: w ∈ nfaLang (star_nfa t) ↔ (w ∈ nfaLang t ∨ ∃ a b, a ≠ [] ∧ a++b=w ∧ a ∈ nfaLang t ∧ b ∈ nfaLang (star_nfa t)) := by
+theorem accepts_iff : nfa_accepts (star_nfa t) w ↔ (w ∈ nfaLang t ∨ ∃ a b, a ≠ [] ∧ a++b=w ∧ a ∈ nfaLang t ∧ b ∈ nfaLang (star_nfa t)) := by
   apply Iff.intro
   · apply accepts_or_ex_prefix_state
   · intro h
