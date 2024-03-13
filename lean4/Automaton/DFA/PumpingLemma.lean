@@ -1,14 +1,16 @@
 import Mathlib.Data.Fintype.Card
 import Automaton.DFA.Basic
 
-namespace DFA
+open DFA
+
+namespace PumpingLemma
 
 variable {σ : Type _}  {σs : Finset σ}  [DecidableEq σ] (dfa : DFA σs)
 
 -- based on proof in mathlib4 Computability/DFA
 
 -- if a word has more characters than number of states in DFA, at least one state must be repeated
-theorem word_cycle {w : word σs} {s t : dfa.qs} (hlen : dfa.qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
+theorem word_cycle {s t : dfa.qs} (hlen : dfa.qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
     ∃ q a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ δ_star' dfa s a = q ∧ δ_star' dfa q b = q ∧ δ_star' dfa q c = t := by
   obtain ⟨n, m, hneq, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card dfa.qs + 1) => δ_star' dfa s (w.take n)) (by simp)
   wlog hle : (n : ℕ) ≤ m
@@ -44,7 +46,7 @@ def listPower (l : List α) : ℕ → List α
 
 -- Any word accepted by a dfa can be broken into three parts and the middle part can be repeated any number of time
 -- and each time it will remain in the language. tldr; there is a cycle
-theorem pumping_lemma {w : word σs} (hlen : dfa.qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
+theorem ex_split (hlen : dfa.qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
     ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ ∀ n, (a ++ listPower b n ++ c) ∈ dfaLang dfa := by
   obtain ⟨_, a, b, c, hx, hlen, hnil, rfl, hb, hc⟩ := word_cycle dfa hlen rfl
   use a, b, c, hx, hlen, hnil
@@ -62,5 +64,12 @@ theorem pumping_lemma {w : word σs} (hlen : dfa.qs.card ≤ w.length) (hw : w �
                 rw [hb]
                 exact s
 
+theorem pumping_lemma : ∃ n, ∀ w ∈ dfaLang dfa, n ≤ w.length →
+  ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ n ∧ b ≠ [] ∧ ∀ x, (a ++ listPower b x ++ c) ∈ dfaLang dfa := by
+    exists dfa.qs.card
+    intro w win lt
+    apply ex_split
+    · exact lt
+    · exact win
 
-end DFA
+end PumpingLemma

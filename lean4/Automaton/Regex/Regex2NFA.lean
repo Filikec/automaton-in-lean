@@ -22,7 +22,8 @@ def regex2NFA : Regex σs → NFA σs
   | Regex.star a => Plus.plus_nfa (Star.star_nfa (regex2NFA a)) (Empty.empty)
 
 
-theorem star_to_regex (s₁ : w ∈ nfaLang (regex2NFA a) → w ∈ RegexLan σs a) (s₂ : ∀ w', w'.length < w.length → w' ∈ nfaLang (regex2NFA a) → w' ∈ RegexLan σs a)
+theorem star_to_regex (s₁ : w ∈ nfaLang (regex2NFA a) → w ∈ RegexLan σs a)
+  (s₂ : ∀ w', w'.length < w.length → w' ∈ nfaLang (regex2NFA a) → w' ∈ RegexLan σs a)
   (h : w ∈ nfaLang (regex2NFA (Regex.star a))) : w ∈ RegexLan σs (Regex.star a) := by
   simp only [nfaLang,Set.mem_def,regex2NFA] at h
   rw [Plus.accepts_iff,Star.accepts_iff] at h
@@ -69,7 +70,8 @@ theorem star_to_regex (s₁ : w ∈ nfaLang (regex2NFA a) → w ∈ RegexLan σs
     apply starLang.empty
 termination_by star_to_regex => w.length
 
-theorem regex_to_star (s₁ : w ∈ RegexLan σs a → w ∈ nfaLang (regex2NFA a)) (s₂ : ∀ w', w'.length < w.length → w' ∈ RegexLan σs a → w' ∈ nfaLang (regex2NFA a))
+theorem regex_to_star (s₁ : w ∈ RegexLan σs a → w ∈ nfaLang (regex2NFA a))
+  (s₂ : ∀ w', w'.length < w.length → w' ∈ RegexLan σs a → w' ∈ nfaLang (regex2NFA a))
   (h : w ∈ RegexLan σs (Regex.star a)) : w ∈ nfaLang (regex2NFA (Regex.star a)) := by
   simp only [RegexLan] at h
   rw [mem_starLang_iff] at h
