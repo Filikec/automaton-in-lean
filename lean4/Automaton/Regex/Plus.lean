@@ -19,14 +19,14 @@ def all_in_qs  (q :  { x // x ∈ t.qs } ⊕ { x // x ∈ s.qs }) : q ∈ plus_q
              simp
 
 def lift_inl (f : Finset {x // x ∈ t.qs}) : Finset {x // x ∈ plus_qs t s} := by
-  exact f.map ⟨fun q => ⟨Sum.inl q,all_in_qs _ _ _⟩,by simp [Function.Injective]⟩
+  exact f.map ⟨fun q => ⟨Sum.inl q,all_in_qs _ _ _⟩, by simp [Function.Injective]⟩
 
 def lift_inr (f : Finset {x // x ∈ s.qs}) : Finset {x // x ∈ plus_qs t s} := by
-  exact f.map ⟨fun q => ⟨Sum.inr q,all_in_qs _ _ _⟩,by simp [Function.Injective]⟩
+  exact f.map ⟨fun q => ⟨Sum.inr q,all_in_qs _ _ _⟩, by simp [Function.Injective]⟩
 
-def plus_q₀ : Finset { x // x ∈ plus_qs t s } := (Finset.disjSum t.q₀ s.q₀).map ⟨(fun q => ⟨q , all_in_qs _ _ _⟩), by simp [Function.Injective]⟩
+def plus_q₀ : Finset { x // x ∈ plus_qs t s } := lift_inl t s t.q₀ ∪ lift_inr t s s.q₀
 
-def plus_fs : Finset { x // x ∈ plus_qs t s } := (Finset.disjSum t.fs s.fs).map ⟨(fun q => ⟨q , all_in_qs _ _ _⟩), by simp [Function.Injective]⟩
+def plus_fs : Finset { x // x ∈ plus_qs t s } := lift_inl t s t.fs ∪ lift_inr t s s.fs
 
 def plus_δ : { x // x ∈ plus_qs t s } → { x // x ∈ σs } → Finset { x // x ∈ plus_qs t s } := by
   intro q e
@@ -37,232 +37,166 @@ def plus_δ : { x // x ∈ plus_qs t s } → { x // x ∈ σs } → Finset { x /
 
 def plus_nfa : NFA σs  := {qs := plus_qs t s, q₀ := plus_q₀ t s, fs:= plus_fs t s, δ := plus_δ t s}
 
+theorem liftl_δ_step : lift_inl t s (δ_step t q e) = δ_step (plus_nfa t s) (lift_inl t s q) e:= by
+  simp only [lift_inl,δ_step,plus_nfa]
+  apply Finset.ext_iff.mpr
+  intro a
+  apply Iff.intro
+  · intro h
+    rw [Finset.mem_map] at h
+    apply Exists.elim h
+    intro a ain
+    rw [Finset.mem_biUnion]
+    rw [Finset.mem_biUnion] at ain
+    apply Exists.elim ain.1
+    intro b bin
+    exists ⟨Sum.inl b, all_in_qs _ _ _⟩
+    simp [plus_δ,lift_inl]
+    use bin.1
+    exists a
+    exists (a.2)
+    use bin.2
+    exact ain.2
+  · intro h
+    simp [Finset.mem_biUnion,plus_qs,plus_δ] at h
+    apply Exists.elim h
+    intro b bin
+    rw [Finset.mem_map]
+    simp only [plus_qs] at a
+    have := a.2
+    simp only [Finset.mem_disjSum] at this
+    apply Or.elim this
+    · intro ex
+      apply Exists.elim ex
+      intro c cin
+      exists c
+      apply And.intro
+      · rw [Finset.mem_biUnion]
+        apply Exists.elim bin.2
+        intro x xin
+        simp [lift_inl] at xin
+        apply Exists.elim xin
+        intro d ex
+        apply Exists.elim ex
+        intro b' bh'
+        exists ⟨b, x⟩
+        apply Exists.elim bin.1
+        intro x xh
+        use xh
+        have : ⟨Sum.inl c, all_in_qs _ _ _⟩  = a := by apply Subtype.eq; simp; apply cin.2
+        rw [←bh'.2] at this
+        simp at this
+        rw [this]
+        exact bh'.1
+      · simp
+        apply Subtype.eq
+        simp
+        apply cin.2
+    · intro ex
+      apply Exists.elim ex
+      intro c cin
+      apply Exists.elim bin.2
+      intro x xh
+      have : ⟨Sum.inr c, all_in_qs _ _ _⟩ = a := by apply Subtype.eq; simp; apply cin.2
+      rw [←this] at xh
+      simp [lift_inl] at xh
+
+
+theorem liftr_δ_step : lift_inr t s (δ_step s q e) = δ_step (plus_nfa t s) (lift_inr t s q) e:= by
+  simp only [lift_inr,δ_step,plus_nfa]
+  apply Finset.ext_iff.mpr
+  intro a
+  apply Iff.intro
+  · intro h
+    rw [Finset.mem_map] at h
+    apply Exists.elim h
+    intro a ain
+    rw [Finset.mem_biUnion]
+    rw [Finset.mem_biUnion] at ain
+    apply Exists.elim ain.1
+    intro b bin
+    exists ⟨Sum.inr b, all_in_qs _ _ _⟩
+    simp [plus_δ,lift_inr]
+    use bin.1
+    exists a
+    exists (a.2)
+    use bin.2
+    exact ain.2
+  · intro h
+    simp [Finset.mem_biUnion,plus_qs,plus_δ] at h
+    apply Exists.elim h
+    intro b bin
+    rw [Finset.mem_map]
+    simp only [plus_qs] at a
+    have := a.2
+    simp only [Finset.mem_disjSum] at this
+    apply Or.elim this
+    · intro ex
+      apply Exists.elim ex
+      intro c cin
+      apply Exists.elim bin.2
+      intro x xh
+      have : ⟨Sum.inl c, all_in_qs _ _ _⟩ = a := by apply Subtype.eq; simp; apply cin.2
+      rw [←this] at xh
+      simp [lift_inr] at xh
+    · intro ex
+      apply Exists.elim ex
+      intro c cin
+      exists c
+      apply And.intro
+      · rw [Finset.mem_biUnion]
+        apply Exists.elim bin.2
+        intro x xin
+        simp [lift_inr] at xin
+        apply Exists.elim xin
+        intro d ex
+        apply Exists.elim ex
+        intro b' bh'
+        exists ⟨b, x⟩
+        apply Exists.elim bin.1
+        intro x xh
+        use xh
+        have : ⟨Sum.inr c, all_in_qs _ _ _⟩  = a := by apply Subtype.eq; simp; apply cin.2
+        rw [←bh'.2] at this
+        simp at this
+        rw [this]
+        exact bh'.1
+      · simp
+        apply Subtype.eq
+        simp
+        apply cin.2
+
+
+
+theorem liftl_δ_star' : (q : Finset t.qs) → lift_inl t s (δ_star' t q w) = δ_star' (plus_nfa t s) (lift_inl t s q) w := by
+  induction w with
+  | nil => simp
+  | cons e es s => simp only [δ_star']
+                   intro q
+                   rw [←liftl_δ_step]
+                   apply s
+
+
+theorem liftr_δ_star' : (q : Finset s.qs) → lift_inr t s (δ_star' s q w) = δ_star' (plus_nfa t s) (lift_inr t s q) w := by
+  induction w with
+  | nil => simp
+  | cons e es s => simp only [δ_star']
+                   intro q
+                   rw [←liftr_δ_step]
+                   apply s
+
 theorem plus_eq : δ_star (plus_nfa t s) w = lift_inl t s (δ_star t w) ∪ lift_inr t s (δ_star s w) := by
   induction w using List.reverseRecOn with
   | H0 => apply Finset.ext_iff.mpr
           intro q
           simp only [δ_star,δ_star',plus_nfa,plus_q₀,lift_inl,lift_inr,Finset.mem_union]
-          apply Iff.intro
-          · intro h'
-            rw [Finset.mem_map] at h'
-            apply Exists.elim h'
-            intro a ain
-            rw [Finset.mem_disjSum] at ain
-            apply Or.elim ain.1
-            · intro ex
-              apply Exists.elim ex
-              intro b bin
-              apply Or.inl
-              apply Finset.mem_map.mpr
-              exists b
-              apply And.intro
-              · exact bin.1
-              · rw [←ain.2]
-                simp
-                exact bin.2
-            · intro ex
-              apply Exists.elim ex
-              intro b bin
-              apply Or.inr
-              apply Finset.mem_map.mpr
-              exists b
-              apply And.intro
-              · exact bin.1
-              · rw [←ain.2]
-                simp
-                exact bin.2
-          · intro qin
-            rw [Finset.mem_map]
-            apply Or.elim qin
-            · intro h
-              rw [Finset.mem_map] at h
-              apply Exists.elim h
-              intro a ain
-              exists Sum.inl a
-              apply And.intro
-              · apply Finset.mem_disjSum.mpr
-                apply Or.inl
-                exists a
-                exact ⟨ain.1,rfl⟩
-              · exact ain.2
-            · intro h
-              rw [Finset.mem_map] at h
-              apply Exists.elim h
-              intro a ain
-              exists Sum.inr a
-              apply And.intro
-              · apply Finset.mem_disjSum.mpr
-                apply Or.inr
-                exists a
-                exact ⟨ain.1,rfl⟩
-              · exact ain.2
   | H1 es e s'=> simp only [δ_star,←δ_star'_append_eq,δ_star']
                  simp only [δ_star] at s'
                  rw [s']
                  have : ∀ q e, δ_step (plus_nfa t s) q e = δ_star' (plus_nfa t s) q [e] := by simp [δ_star']
                  rw [this,δ_star'_union]
-                 apply Finset.ext_iff.mpr
-                 intro q
-                 simp only [plus_nfa,plus_qs] at q
-                 have qsum := q.2
-                 rw [Finset.mem_disjSum] at qsum
-                 apply Or.elim qsum
-                 · intro ex'
-                   apply Exists.elim ex'
-                   intro q' qe'
-                   have : ⟨Sum.inl q',Finset.inl_mem_disjSum.mpr qe'.1⟩ = q := by rw [Subtype.mk_eq_mk]; exact qe'.2
-                   rw [←this]
-                   apply Iff.intro
-                   · intro h
-                     rw [Finset.mem_union] at h
-                     rw [Finset.mem_union]
-                     apply Or.inl
-                     simp only [lift_inl,Finset.mem_map]
-                     apply Or.elim h
-                     · intro h'
-                       simp only [lift_inl,δ_star',δ_step,Finset.mem_biUnion] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       rw [Finset.mem_map] at ain
-                       exists q'
-                       apply And.intro
-                       · simp only [δ_step]
-                         rw [Finset.mem_biUnion]
-                         apply Exists.elim ain.1
-                         intro a _
-                         simp [plus_nfa] at ain
-                         apply Exists.elim ain.1
-                         intro a ex
-                         apply Exists.elim ex
-                         intro b bin
-                         rw [←bin.2] at ain
-                         simp [plus_δ,lift_inl] at ain
-                         exists ⟨a,b⟩
-                         exact ⟨bin.1,by apply ain.2⟩
-                       · simp
-                     · intro h'
-                       simp only [lift_inr,δ_star',δ_step,Finset.mem_biUnion] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       rw [Finset.mem_map] at ain
-                       exists q'
-                       apply And.intro
-                       · simp only [δ_step]
-                         rw [Finset.mem_biUnion]
-                         apply Exists.elim ain.1
-                         intro a _
-                         simp [plus_nfa] at ain
-                         apply Exists.elim ain.1
-                         intro a ex
-                         apply Exists.elim ex
-                         intro b bin
-                         rw [←bin.2] at ain
-                         simp [plus_δ,lift_inr] at ain
-                       · simp
-                   · intro h
-                     rw [Finset.mem_union] at h
-                     rw [Finset.mem_union]
-                     apply Or.elim h
-                     · intro h'
-                       apply Or.inl
-                       simp only [δ_star',δ_step,Finset.mem_biUnion]
-                       simp only [lift_inl,Finset.mem_map] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       simp at ain
-                       apply Exists.elim ain.1
-                       intro a ex
-                       apply Exists.elim ex
-                       intro b bin
-                       exists ⟨Sum.inl ⟨a,b⟩,all_in_qs _ _ _⟩
-                       simp [lift_inl,plus_nfa,plus_δ]
-                       rw [←ain.2]
-                       exact bin
-                     · intro h'
-                       apply Or.inr
-                       simp only [δ_star',δ_step,Finset.mem_biUnion]
-                       simp only [lift_inr,Finset.mem_map] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       simp at ain
-                 · intro ex'
-                   apply Exists.elim ex'
-                   intro q' qe'
-                   have : ⟨Sum.inr q',Finset.inr_mem_disjSum.mpr qe'.1⟩ = q := by rw [Subtype.mk_eq_mk]; exact qe'.2
-                   rw [←this]
-                   apply Iff.intro
-                   · intro h
-                     rw [Finset.mem_union] at h
-                     rw [Finset.mem_union]
-                     apply Or.inr
-                     simp only [lift_inr,Finset.mem_map]
-                     apply Or.elim h
-                     · intro h'
-                       simp only [lift_inl,δ_star',δ_step,Finset.mem_biUnion] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       rw [Finset.mem_map] at ain
-                       exists q'
-                       apply And.intro
-                       · simp only [δ_step]
-                         rw [Finset.mem_biUnion]
-                         apply Exists.elim ain.1
-                         intro a _
-                         simp [plus_nfa] at ain
-                         apply Exists.elim ain.1
-                         intro a ex
-                         apply Exists.elim ex
-                         intro b bin
-                         rw [←bin.2] at ain
-                         simp [plus_δ,lift_inl] at ain
-                       · simp
-                     · intro h'
-                       simp only [lift_inr,δ_star',δ_step,Finset.mem_biUnion] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       rw [Finset.mem_map] at ain
-                       exists q'
-                       apply And.intro
-                       · simp only [δ_step]
-                         rw [Finset.mem_biUnion]
-                         apply Exists.elim ain.1
-                         intro a _
-                         simp [plus_nfa] at ain
-                         apply Exists.elim ain.1
-                         intro a ex
-                         apply Exists.elim ex
-                         intro b bin
-                         rw [←bin.2] at ain
-                         simp [plus_δ,lift_inr] at ain
-                         exists ⟨a,b⟩
-                         exact ⟨bin.1,ain.2⟩
-                       · simp
-                   · intro h
-                     rw [Finset.mem_union] at h
-                     rw [Finset.mem_union]
-                     apply Or.elim h
-                     · intro h'
-                       apply Or.inl
-                       simp only [δ_star',δ_step,Finset.mem_biUnion]
-                       simp only [lift_inl,Finset.mem_map] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       simp at ain
-                     · intro h'
-                       apply Or.inr
-                       simp only [δ_star',δ_step,Finset.mem_biUnion]
-                       simp only [lift_inr,Finset.mem_map] at h'
-                       apply Exists.elim h'
-                       intro a ain
-                       simp at ain
-                       apply Exists.elim ain.1
-                       intro a ex
-                       apply Exists.elim ex
-                       intro b bin
-                       exists ⟨Sum.inr ⟨a,b⟩,all_in_qs _ _ _⟩
-                       simp [lift_inr,plus_nfa,plus_δ,Finset.mem_map]
-                       rw [←ain.2]
-                       exact bin
+                 simp only [δ_star']
+                 rw [liftr_δ_step,liftl_δ_step]
 
 
 theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_accepts s w := by
@@ -285,8 +219,9 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       apply And.intro
       · exact h.1
       · rw [←h.2] at xin
-        simp [plus_nfa,plus_fs] at xin
-        apply xin.2
+        simp [plus_nfa,plus_fs,lift_inl,lift_inr] at xin
+        simp [lift_inl,lift_inr]
+        exact xin.2
     · intro xe
       apply Or.inr
       simp only [lift_inr,Finset.mem_map] at xe
@@ -297,7 +232,8 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       apply And.intro
       · exact h.1
       · rw [←h.2] at xin
-        simp [plus_nfa,plus_fs] at xin
+        simp [plus_nfa,plus_fs,lift_inl,lift_inr] at xin
+        simp [lift_inl,lift_inr]
         apply xin.2
   · intro h
     rw [plus_eq]
@@ -314,7 +250,7 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       · apply Or.inl
         simp [lift_inl]
         exact xin.1
-      · simp [plus_nfa,plus_fs]
+      · simp [plus_nfa,plus_fs,lift_inr,lift_inl]
         exact xin.2
     · intro h
       rw [Finset.Nonempty] at h
@@ -327,6 +263,6 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       · apply Or.inr
         simp [lift_inr]
         exact xin.1
-      · simp [plus_nfa,plus_fs]
+      · simp [plus_nfa,plus_fs,lift_inr,lift_inl]
         exact xin.2
 end Plus

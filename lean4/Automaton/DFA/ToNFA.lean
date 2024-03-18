@@ -13,10 +13,32 @@ open DFA NFA
 
 namespace ToNFA
 
+open Lean Meta Elab Command
+
+private def detectClassicalOf (constName : Name) : CommandElabM Unit := do
+  let env ← getEnv
+  let (_, s) := ((CollectAxioms.collect constName).run env).run {}
+  if s.axioms.isEmpty then
+    logInfo m!"'{constName}' does not depend on any axioms"
+  else
+    let caxes := s.axioms.filter fun nm => Name.isPrefixOf `Classical nm
+    if caxes.isEmpty then
+      logInfo m!"'{constName}' is non-classical and depends on axioms: {s.axioms.toList}"
+    else
+      throwError m!"'{constName}' depends on classical axioms: {caxes.toList}"
+
+syntax (name:=detectClassical) "#detect_classical " ident : command
+
+@[command_elab «detectClassical»] def elabDetectClassical : CommandElab
+  | `(#detect_classical%$tk $id) => withRef tk do
+    let cs ← resolveGlobalConstWithInfos id
+    cs.forM detectClassicalOf
+  | _ => throwUnsupportedSyntax
+
 variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s td : DFA σs)
 
 -- conversion from nfa to dfa
-def dfa_to_nfa : NFA σs := {q₀ := {td.q₀} , fs := td.fs , δ := fun q e => {td.δ q e} }
+def dfa_to_nfa : NFA σs := { q₀ := {td.q₀} , fs := td.fs , δ := fun q e => {td.δ q e} }
 
 -- the δ_star function remains the same (but NFA produces singletons)
 theorem dfa_to_nfa_eq_δ_star' (w : word σs) : (q : td.qs) → {DFA.δ_star' td q w} = NFA.δ_star' (dfa_to_nfa td) {q} w := by
@@ -42,5 +64,6 @@ theorem dfa_to_nfa_eq : dfa_accepts td w ↔ nfa_accepts (dfa_to_nfa td) w := by
   · intro h
     apply Finset.nonempty_inter_singleton_imp_in
     exact h
+
 
 end ToNFA

@@ -1,10 +1,9 @@
-import Automaton.Regex.Star
-import Automaton.Regex.Zero
 import Automaton.Regex.Append
+import Automaton.Regex.Star
 import Automaton.Regex.Plus
-import Automaton.Regex.Char
 import Automaton.Regex.Empty
-import Automaton.Regex.Basic
+import Automaton.Regex.Zero
+import Automaton.Regex.Char
 
 namespace ToNFA
 
@@ -220,7 +219,7 @@ theorem regex_to_append (s₁: w ∈ RegexLan σs a → w ∈ nfaLang (regex2NFA
 theorem nfa2regex : w ∈ nfaLang (regex2NFA r) → w ∈ RegexLan σs r := by
   intro h
   induction r with
-  | zero => simp only [regex2NFA,nfaLang,Zero.not_accepts] at h; simp only [RegexLan]; apply h
+  | zero => simp only [regex2NFA,nfaLang,Zero.accepts_iff] at h; simp only [RegexLan]; apply h
   | epsilon => simp only [regex2NFA,nfaLang,Empty.accepts_iff] at h; simp only [RegexLan]; apply h
   | char a => simp only [regex2NFA,nfaLang,Char.accepts_iff] at h; simp only [RegexLan]; apply h
   | plus a b s₁ s₂ => simp only [regex2NFA,nfaLang,regex2NFA,Plus.accepts_iff,Set.mem_def] at h
@@ -248,7 +247,7 @@ termination_by nfa2regex => w.length
 theorem regex2nfa : w ∈ RegexLan σs r → w ∈ nfaLang (regex2NFA r) := by
   intro h
   induction r with
-  | zero => simp only [RegexLan] at h; simp only [regex2NFA,nfaLang,Zero.not_accepts,Set.mem_def]; apply h
+  | zero => simp only [RegexLan] at h; simp only [regex2NFA,nfaLang,Zero.accepts_iff,Set.mem_def]; apply h
   | epsilon => simp only [regex2NFA,nfaLang,Empty.accepts_iff]; apply h
   | char a => simp only [regex2NFA,nfaLang,Char.accepts_iff]; apply h
   | plus a b s₁ s₂ => simp only [regex2NFA,nfaLang,regex2NFA,Plus.accepts_iff,Set.mem_def]

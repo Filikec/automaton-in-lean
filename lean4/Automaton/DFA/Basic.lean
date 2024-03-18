@@ -43,18 +43,17 @@ instance decEqQ : DecidableEq t.q := t.d₂
 instance decEqσ : DecidableEq σ := t.d₁
 
 -- ToString
--- instance instToString [ToString σ] [ToString q] [fσ : FinEnum σ] [fq : FinEnum q] : ToString (DFA σs) where
---   toString t := by
---     have s : List String := (fσ.toList).map toString
---     have q : String := toString t.q₀
---     have qss : List String :=  (fq.toList).map toString
---     have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map toString
---     have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ t.qs ∧ b ∈ σs then "("++ toString a ++ "×" ++ toString b ++ ")→" ++ toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
---     exact "Σ: { " ++ String.join (s.map (fun e => e++" ")) ++ "}\n" ++
---           "Q: { " ++ String.join (qss.map (fun e => e++" ")) ++ "}\n" ++
---           "δ: " ++ String.join (δ.map (fun e => "\n   "++e)) ++ "\n" ++
---           "q₀: " ++ q ++ "\n" ++
---           "F: { " ++ String.join (fs.map (fun e => e++" ")) ++ "}\n"
+def toString [ToString σ] [ToString t.q] [fσ : FinEnum σ] [fq : FinEnum t.q] : String := by
+    have s : List String := (fσ.toList).map ToString.toString
+    have q : String := ToString.toString t.q₀
+    have qss : List String :=  (fq.toList).map ToString.toString
+    have fs : List String := ((fq.toList).filter (fun e => e ∈ t.fs.map ⟨ fun a => a.1 , by simp [Function.Injective]⟩)).map ToString.toString
+    have δ : List String := (fq.toList).map (fun a => String.join ((fσ.toList).map (fun b => if h : a ∈ t.qs ∧ b ∈ σs then "("++ ToString.toString a ++ "×" ++ ToString.toString b ++ ")→" ++ ToString.toString (t.δ ⟨a , h.1⟩ ⟨b , h.2⟩) ++ " " else "")))
+    exact "Σ: { " ++ String.join (s.map (fun e => e++" ")) ++ "}\n" ++
+          "Q: { " ++ String.join (qss.map (fun e => e++" ")) ++ "}\n" ++
+          "δ: " ++ String.join (δ.map (fun e => "\n   "++e)) ++ "\n" ++
+          "q₀: " ++ q ++ "\n" ++
+          "F: { " ++ String.join (fs.map (fun e => e++" ")) ++ "}\n"
 
 
 -- δ* function
@@ -73,7 +72,6 @@ def δ_star : (w : word σs) → t.qs := δ_star' t t.q₀
 def dfa_accepts : (w : word σs) → Prop := fun w => δ_star t w ∈ t.fs
 
 def dfaLang : Lang σs := fun w => dfa_accepts t w
-
 
 -- state is reachable from the given state
 inductive reachable (q : t.qs) : t.qs → Prop where
@@ -131,7 +129,6 @@ theorem δ_star'_append_eq (r : word σs) (a : t.qs) : (l : word σs) → δ_sta
                    have : l ++ a :: as = l ++ [a] ++ as := by simp
                    rw [this,s]
                    simp [δ_star,δ_δ_star'_concat_eq_δ_star']
-
 
 
 lemma δ_star'_reachable (w : word σs) (q : t.qs) : (q' : t.qs) → reachable t q q' → reachable t q (δ_star' t q' w) := by
@@ -524,8 +521,6 @@ instance DecidableExW {P : word σs → Prop} [f : Fintype {x : word σs // x.le
                  · apply f.complete
                  · exact h
 
-instance idk [Decidable a] [Decidable b] [Decidable c] : Decidable (a ∧ b ∧ c) := by infer_instance
-
 instance decIsPath : (a b : t.qs) → Decidable (is_path t a b w) := by
   induction w with
   | nil => simp only [is_path]
@@ -679,8 +674,6 @@ instance decExPrefix : Decidable (∃ a b, dfa_accepts t a ∧ a ++ b = w) := by
                      apply Fintype.complete
                    · rw [And.comm]
                      exact h
-
-
 
 
 end DFA
