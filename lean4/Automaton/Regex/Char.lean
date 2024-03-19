@@ -40,7 +40,6 @@ theorem accepts_iff (a : σs) : nfa_accepts (char a) w ↔ w = [a] := by
                               apply xin.1
                · rw [δ_star'_empty,Finset.mem_inter] at xin
                  exfalso
-                 exfalso
                  apply Finset.not_mem_empty
                  apply xin.1
   · intro eq

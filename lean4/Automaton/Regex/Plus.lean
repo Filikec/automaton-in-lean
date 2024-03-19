@@ -215,26 +215,19 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       apply Exists.elim xe
       intro a h
       exists a
-      rw [Finset.mem_inter]
-      apply And.intro
-      · exact h.1
-      · rw [←h.2] at xin
-        simp [plus_nfa,plus_fs,lift_inl,lift_inr] at xin
-        simp [lift_inl,lift_inr]
-        exact xin.2
+      rw [←h.2] at xin
+      simp only [Finset.mem_inter,δ_star]
+      simp [plus_nfa,plus_fs,lift_inl,lift_inr,Finset.mem_union] at xin
+      exact xin
     · intro xe
       apply Or.inr
       simp only [lift_inr,Finset.mem_map] at xe
       apply Exists.elim xe
       intro a h
       exists a
-      rw [Finset.mem_inter]
-      apply And.intro
-      · exact h.1
-      · rw [←h.2] at xin
-        simp [plus_nfa,plus_fs,lift_inl,lift_inr] at xin
-        simp [lift_inl,lift_inr]
-        apply xin.2
+      rw [←h.2] at xin
+      simp [plus_nfa,plus_fs,lift_inl,lift_inr] at xin
+      simpa [Finset.mem_inter]
   · intro h
     rw [plus_eq]
     rw [Finset.Nonempty]
@@ -245,24 +238,13 @@ theorem accepts_iff : nfa_accepts (plus_nfa t s) w ↔ nfa_accepts t w ∨ nfa_a
       intro x xin
       rw [Finset.mem_inter] at xin
       exists ⟨Sum.inl x, all_in_qs _ _ _⟩
-      rw [Finset.mem_inter,Finset.mem_union]
-      apply And.intro
-      · apply Or.inl
-        simp [lift_inl]
-        exact xin.1
-      · simp [plus_nfa,plus_fs,lift_inr,lift_inl]
-        exact xin.2
+      simpa [lift_inl,lift_inr,plus_nfa,plus_fs]
     · intro h
       rw [Finset.Nonempty] at h
       apply Exists.elim h
       intro x xin
       rw [Finset.mem_inter] at xin
       exists ⟨Sum.inr x, all_in_qs _ _ _⟩
-      rw [Finset.mem_inter,Finset.mem_union]
-      apply And.intro
-      · apply Or.inr
-        simp [lift_inr]
-        exact xin.1
-      · simp [plus_nfa,plus_fs,lift_inr,lift_inl]
-        exact xin.2
+      simpa [lift_inl,lift_inr,plus_nfa,plus_fs]
+
 end Plus

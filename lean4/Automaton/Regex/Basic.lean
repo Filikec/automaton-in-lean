@@ -69,6 +69,7 @@ theorem if_mem_starLang : w ∈ starLang P → (w = [] ∨ ∃ a b, a ≠ [] ∧
                                        rw [h.2.1]
                                        use rfl, pa
                                        exact sb
+
 theorem mem_starLang_if : (w = [] ∨ ∃ a b, a ≠ [] ∧ a++b=w ∧ a ∈ P ∧ b ∈ starLang P) → w ∈ starLang P := by
   intro h
   apply Or.elim h

@@ -78,16 +78,14 @@ theorem inl_mem_iff : (a : t.qs) → a ∈ δ_star' t t.q₀ w ↔ ⟨Sum.inl a,
              · simp [lift_inl] at ein
                exact ein
   | H1 es e s => intro q
+                 simp only [δ_star',δ_step,←δ_star'_append_eq,Finset.mem_biUnion]
                  apply Iff.intro
                  · intro h
-                   simp only [δ_star',δ_step,←δ_star'_append_eq,Finset.mem_biUnion]
-                   simp only [δ_star',δ_step,←δ_star'_append_eq,Finset.mem_biUnion] at h
                    apply Exists.elim h
                    intro a ain
-                   have := (s a).mp ain.1
                    exists ⟨Sum.inl a, all_in_qs _ _ _⟩
                    apply And.intro
-                   · exact this
+                   · exact (s a).mp ain.1
                    · simp only [append_nfa,append_δ]
                      split
                      · apply Finset.mem_union_left
@@ -96,8 +94,6 @@ theorem inl_mem_iff : (a : t.qs) → a ∈ δ_star' t t.q₀ w ↔ ⟨Sum.inl a,
                      · simp [lift_inl]
                        exact ain.2
                  · intro h
-                   simp only [δ_star',δ_step,←δ_star'_append_eq,Finset.mem_biUnion]
-                   simp only [δ_star',δ_step,←δ_star'_append_eq,Finset.mem_biUnion] at h
                    apply Exists.elim h
                    intro a ain
                    simp only [append_nfa,append_qs] at a
@@ -138,8 +134,8 @@ theorem s₀_subset : nfa_accepts t w → lift_inr t s s.q₀ ⊆ δ_star (appen
            intro x ex
            rw [Finset.mem_union]
            apply Or.inr
-           exact ex
-           contradiction
+           · exact ex
+           · contradiction
   | H1 es e _ =>  simp only [nfa_accepts,δ_star,←δ_star'_append_eq]
                   intro h
                   rw [Finset.subset_iff]
@@ -357,7 +353,6 @@ theorem ex_split : nfa_accepts (append_nfa t s) w → ∃ a b, nfa_accepts t a �
     · simp [append_nfa_fs_eq,lift_inr] at ein
       exact ein.2
   · exact h.2.2
-
 
 
 theorem accepts_if_split : nfa_accepts t a ∧ nfa_accepts s b → nfa_accepts (append_nfa t s) (a++b) := by
