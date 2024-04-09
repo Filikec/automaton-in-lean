@@ -1,5 +1,6 @@
 import Mathlib.Data.Fintype.Card
 import Automaton.DFA.Basic
+import Automaton.Language.Basic
 
 open DFA
 
@@ -9,7 +10,7 @@ variable {σ : Type _}  {σs : Finset σ}  [DecidableEq σ] (dfa : DFA σs)
 
 -- based on proof in mathlib4 Computability/DFA
 
--- if a word has more characters than number of states in DFA, at least one state must be repeated
+-- if a word has more characters than number of states in DFA and is accepted, at least one state must be repeated in its δ*
 theorem word_cycle {s t : dfa.qs} (hlen : dfa.qs.card ≤ w.length) (hx : δ_star' dfa s w = t) :
     ∃ q a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ δ_star' dfa s a = q ∧ δ_star' dfa q b = q ∧ δ_star' dfa q c = t := by
   obtain ⟨n, m, hneq, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt (fun n : Fin (Fintype.card dfa.qs + 1) => δ_star' dfa s (w.take n)) (by simp)
@@ -40,14 +41,11 @@ theorem word_cycle {s t : dfa.qs} (hlen : dfa.qs.card ≤ w.length) (hx : δ_sta
   rwa [← hq, ← δ_star'_append_eq, ← δ_star'_append_eq, ← List.append_assoc, List.take_append_drop, List.take_append_drop]
 
 
-def listPower (l : List α) : ℕ → List α
-  | 0  => []
-  | n+1  => l ++ listPower l n
 
 -- Any word accepted by a dfa can be broken into three parts and the middle part can be repeated any number of time
 -- and each time it will remain in the language. tldr; there is a cycle
 theorem ex_split (hlen : dfa.qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
-    ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ ∀ n, (a ++ listPower b n ++ c) ∈ dfaLang dfa := by
+    ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ dfa.qs.card ∧ b ≠ [] ∧ ∀ n, (a ++ power b n ++ c) ∈ dfaLang dfa := by
   obtain ⟨_, a, b, c, hx, hlen, hnil, rfl, hb, hc⟩ := word_cycle dfa hlen rfl
   use a, b, c, hx, hlen, hnil
   intro n
@@ -56,16 +54,16 @@ theorem ex_split (hlen : dfa.qs.card ≤ w.length) (hw : w ∈ dfaLang dfa) :
   induction n with
   | zero => simp only [δ_star]
             rw [δ_star'_append_eq,δ_star'_append_eq]
-            simp only [listPower,δ_star']
+            simp only [power,δ_star']
             rw [hc]
             assumption
-  | succ n s => simp only [listPower,δ_star,δ_star'_append_eq]
+  | succ n s => simp only [power,δ_star,δ_star'_append_eq]
                 simp only [δ_star,δ_star'_append_eq] at s
                 rw [hb]
                 exact s
 
 theorem pumping_lemma : ∃ n, ∀ w ∈ dfaLang dfa, n ≤ w.length →
-  ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ n ∧ b ≠ [] ∧ ∀ x, (a ++ listPower b x ++ c) ∈ dfaLang dfa := by
+  ∃ a b c, w = a ++ b ++ c ∧ a.length + b.length ≤ n ∧ b ≠ [] ∧ ∀ x, (a ++ power b x ++ c) ∈ dfaLang dfa := by
     exists dfa.qs.card
     intro w win lt
     apply ex_split

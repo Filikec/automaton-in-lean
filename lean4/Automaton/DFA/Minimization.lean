@@ -97,10 +97,9 @@ theorem distinct_iff_ex_notaccepted (a b : t.qs) : distinct t a b ↔ ∃ l : wo
   · intro ex
     apply Exists.elim ex
     intro c ex
-    have : distinct t (δ_star' t a c) (δ_star' t b c) := by apply distinct.base
-                                                            exact ex
     apply distinct_if_δ_star'_distinct
-    exact this
+    apply distinct.base
+    exact ex
 
 lemma nondistinct_iff_nex_notaccepted : nondistinct t a b ↔ ¬∃ w : word σs, ¬(δ_star' t a w ∈ t.fs ↔ δ_star' t b w ∈ t.fs) := by
   simp only [nondistinct]

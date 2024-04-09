@@ -163,8 +163,7 @@ theorem liftr_δ_step : lift_inr t s (δ_step s q e) = δ_step (plus_nfa t s) (l
         exact bh'.1
       · simp
         apply Subtype.eq
-        simp
-        apply cin.2
+        rw [←cin.2]
 
 
 

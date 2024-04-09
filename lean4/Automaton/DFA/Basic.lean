@@ -121,7 +121,6 @@ theorem δ_star_append_eq (r : word σs) : (l : word σs) → δ_star t (l++r) =
                    rw [this,s]
                    simp [δ_star,δ_δ_star'_concat_eq_δ_star']
 
-
 theorem δ_star'_append_eq (r : word σs) (a : t.qs) : (l : word σs) → δ_star' t a (l++r) = δ_star' t (δ_star' t a l) r := by
   induction r with
   | nil => simp
@@ -129,7 +128,6 @@ theorem δ_star'_append_eq (r : word σs) (a : t.qs) : (l : word σs) → δ_sta
                    have : l ++ a :: as = l ++ [a] ++ as := by simp
                    rw [this,s]
                    simp [δ_star,δ_δ_star'_concat_eq_δ_star']
-
 
 lemma δ_star'_reachable (w : word σs) (q : t.qs) : (q' : t.qs) → reachable t q q' → reachable t q (δ_star' t q' w) := by
   induction w with
@@ -187,7 +185,6 @@ theorem ex_ne_nil_accepted_iff (h' : t.q₀ ∉ t.fs) : (∃ w, w ∈ dfaLang t 
                contradiction
     | inr h => exists w
 
-
 lemma reachable_δ_star' (w : word σs) (q : t.qs) : (q' : t.qs) → reachable t (δ_star' t q' w) q → reachable t q' q := by
   match w with
   | [] => simp
@@ -198,7 +195,6 @@ lemma reachable_δ_star' (w : word σs) (q : t.qs) : (q' : t.qs) → reachable t
              intro w eq
              rw [←δ_star'_append_eq] at eq
              exists e :: es ++ w
-
 
 theorem accepts_prefix_if (l r : word σs) : (∀ q' : t.qs , (reachable t (δ_star t l) q' → q' ∈ t.fs)) → dfa_accepts t (l ++ r) := by
   intro fa

@@ -350,7 +350,7 @@ theorem ex_split : nfa_accepts (append_nfa t s) w → ∃ a b, nfa_accepts t a �
     rw [Finset.mem_inter]
     apply And.intro
     · exact h.2.1
-    · simp [append_nfa_fs_eq,lift_inr] at ein
+    · simp only [append_nfa_fs_eq,lift_inr,Finset.mem_map,Function.Embedding.coeFn_mk,Subtype.mk_eq_mk,Function.Injective.eq_iff Sum.inr_injective,exists_eq_right] at ein
       exact ein.2
   · exact h.2.2
 

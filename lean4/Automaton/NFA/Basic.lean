@@ -68,7 +68,7 @@ instance decidableLang (w : word σs) : Decidable (w ∈ nfaLang t) := by
   apply Finset.decidableNonempty
 
 
-lemma δ_star'_append_eq : (q : Finset t.qs) → δ_star' t (δ_star' t q l) r = δ_star' t q (l ++ r) := by
+theorem δ_star'_append_eq : (q : Finset t.qs) → δ_star' t (δ_star' t q l) r = δ_star' t q (l ++ r) := by
   induction l with
   | nil => simp
   | cons e es s => intro q

@@ -17,7 +17,7 @@ inductive Regex (f : Finset α) : Type u
 
 open Regex
 
-variable {α : Type _} [DecidableEq α] (f : Finset α)
+variable {α : Type _} [DecidableEq α] {f : Finset α}
 
 lemma ex_cons_eq (w : List α) : ∃ a b : List α, a ++ b = w := by
   induction w with
@@ -105,13 +105,87 @@ theorem plusLang_ss_starLang : plusLang p ⊆ starLang p := by
                          · assumption
                          · apply s
 
-def RegexLan : Regex f → Lang f
+theorem mem_starLang (h : P w) : starLang P w := by
+  have : w = w ++ [] := by simp
+  rw [this]
+  apply starLang.extend
+  exact h
+  exact starLang.empty
+
+def regexLan : Regex f → Lang f
   | zero => ∅
   | epsilon => {[]}
   | char a => {[a]}
-  | plus a b => RegexLan a ∪ RegexLan b
-  | append a b => {w | ∃ x y, x ∈ RegexLan a ∧ y ∈ RegexLan b ∧ w = x++y}
-  | star a => starLang (RegexLan a)
+  | plus a b => regexLan a ∪ regexLan b
+  | append a b => {w | ∃ x y, x ∈ regexLan a ∧ y ∈ regexLan b ∧ w = x++y}
+  | star a => starLang (regexLan a)
+
+
+
+theorem ardens_rule (A B : Regex f) : regexLan (append (star A) B) = regexLan (plus (append A (append (star A) B)) B) := by
+  simp only [regexLan]
+  apply Set.ext
+  intro w
+  apply Iff.intro
+  · intro win
+    simp only [Set.mem_def,setOf] at win
+    apply Exists.elim win
+    intro x ex
+    apply Exists.elim ex
+    intro y h
+    rw [Set.mem_union]
+    have := mem_starLang_iff.mp h.1
+    cases this with
+    | inl g => apply Or.inr
+               rw [g] at h
+               simp at h
+               rw [h.2.2]
+               apply h.2.1
+    | inr g => apply Or.inl
+               simp only [Set.mem_def,setOf]
+               apply Exists.elim g
+               intro a ex
+               apply Exists.elim ex
+               intro b h'
+               exists a
+               exists b++y
+               use h'.2.2.1
+               apply And.intro
+               · exists b
+                 exists y
+                 use h'.2.2.2, h.2.1
+               · rw [h.2.2,←h'.2.1]
+                 simp
+  · intro win
+    rw [Set.mem_union] at win
+    apply Or.elim win
+    · intro win
+      rw [Set.mem_def,setOf] at win
+      apply Exists.elim win
+      intro x ex
+      apply Exists.elim ex
+      intro y h
+      rw [Set.mem_def,setOf,Set.mem_def] at h
+      apply Exists.elim h.2.1
+      intro a ex
+      apply Exists.elim ex
+      intro b h'
+      rw [Set.mem_def,setOf]
+      exists x++a
+      exists b
+      apply And.intro
+      · apply starLang.extend
+        exact h.1
+        exact h'.1
+      · use h'.2.1
+        rw [h.2.2,h'.2.2]
+        simp
+    · intro win
+      rw [Set.mem_def,setOf]
+      exists []
+      exists w
+      use starLang.empty, win
+      rfl
 
 
 end Regex

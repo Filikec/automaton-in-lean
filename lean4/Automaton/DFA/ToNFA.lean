@@ -13,28 +13,6 @@ open DFA NFA
 
 namespace ToNFA
 
-open Lean Meta Elab Command
-
-private def detectClassicalOf (constName : Name) : CommandElabM Unit := do
-  let env ← getEnv
-  let (_, s) := ((CollectAxioms.collect constName).run env).run {}
-  if s.axioms.isEmpty then
-    logInfo m!"'{constName}' does not depend on any axioms"
-  else
-    let caxes := s.axioms.filter fun nm => Name.isPrefixOf `Classical nm
-    if caxes.isEmpty then
-      logInfo m!"'{constName}' is non-classical and depends on axioms: {s.axioms.toList}"
-    else
-      throwError m!"'{constName}' depends on classical axioms: {caxes.toList}"
-
-syntax (name:=detectClassical) "#detect_classical " ident : command
-
-@[command_elab «detectClassical»] def elabDetectClassical : CommandElab
-  | `(#detect_classical%$tk $id) => withRef tk do
-    let cs ← resolveGlobalConstWithInfos id
-    cs.forM detectClassicalOf
-  | _ => throwUnsupportedSyntax
-
 variable {σ : Type _} {q : Type _}  {σs : Finset σ}  [DecidableEq σ] [DecidableEq q] (r s td : DFA σs)
 
 -- conversion from nfa to dfa
@@ -64,6 +42,5 @@ theorem dfa_to_nfa_eq : dfa_accepts td w ↔ nfa_accepts (dfa_to_nfa td) w := by
   · intro h
     apply Finset.nonempty_inter_singleton_imp_in
     exact h
-
 
 end ToNFA
