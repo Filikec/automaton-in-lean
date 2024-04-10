@@ -64,7 +64,7 @@ lemma εclosure_eq_εclosure : εclosure tn f = if h : f = (f.biUnion (fun q => 
 theorem εclosure_empty_empty : εclosure tn ∅ = ∅ := by
   rw [εclosure_eq_εclosure]
   simp
-
+  
 
 lemma εclosure_start_mem (q : tn.qs) (f : Finset tn.qs) : q ∈ f → q ∈ εclosure tn f := by
   rw [εclosure_eq_εclosure]

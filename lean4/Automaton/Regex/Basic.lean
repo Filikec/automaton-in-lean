@@ -17,7 +17,20 @@ inductive Regex (f : Finset α) : Type u
 
 open Regex
 
-variable {α : Type _} [DecidableEq α] {f : Finset α}
+
+instance : Inhabited (Regex α) := ⟨zero⟩
+
+instance : Add (Regex α) := ⟨plus⟩
+
+instance : Mul (Regex α) := ⟨append⟩
+
+instance : One (Regex α) := ⟨epsilon⟩
+
+instance : Zero (Regex α) := ⟨zero⟩
+
+instance : Pow (Regex α) ℕ := ⟨fun n r => npowRec r n⟩
+
+variable {α : Type _} [DecidableEq α] {f : Finset α} (a : Regex f)
 
 lemma ex_cons_eq (w : List α) : ∃ a b : List α, a ++ b = w := by
   induction w with
@@ -119,7 +132,6 @@ def regexLan : Regex f → Lang f
   | plus a b => regexLan a ∪ regexLan b
   | append a b => {w | ∃ x y, x ∈ regexLan a ∧ y ∈ regexLan b ∧ w = x++y}
   | star a => starLang (regexLan a)
-
 
 
 theorem ardens_rule (A B : Regex f) : regexLan (append (star A) B) = regexLan (plus (append A (append (star A) B)) B) := by

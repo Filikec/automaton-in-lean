@@ -21,6 +21,8 @@ def regex2NFA : Regex σs → NFA σs
   | Regex.star a => Plus.plus_nfa (Star.star_nfa (regex2NFA a)) (Empty.empty)
 
 
+
+
 theorem star_to_regex (s₁ : w ∈ nfaLang (regex2NFA a) → w ∈ regexLan a)
   (s₂ : ∀ w', w'.length < w.length → w' ∈ nfaLang (regex2NFA a) → w' ∈ regexLan a)
   (h : w ∈ nfaLang (regex2NFA (Regex.star a))) : w ∈ regexLan (Regex.star a) := by
@@ -272,9 +274,15 @@ theorem regex2nfa {r : Regex σs} : w ∈ regexLan r → w ∈ nfaLang (regex2NF
                 apply regex_to_star s fa h
 termination_by regex2nfa => w.length
 
-theorem regex2NFA_eq_regex : nfaLang (regex2NFA a) = regexLan a := by
+theorem regex2nfa_eq_regex : nfaLang (regex2NFA a) = regexLan a := by
   rw [Set.ext_iff]
   intro x
   apply Iff.intro
   · apply nfa2regex
   · apply regex2nfa
+
+lemma mem_iff_regex2nfa : w ∈ nfaLang (regex2NFA a) ↔ w ∈ regexLan a := by
+  rw [regex2nfa_eq_regex]
+
+instance decMem : Decidable (w ∈ regexLan a) := decidable_of_decidable_of_iff (mem_iff_regex2nfa)
+
