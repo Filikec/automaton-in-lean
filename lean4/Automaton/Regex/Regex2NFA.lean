@@ -15,17 +15,16 @@ variable {σ : Type _} {σs : Finset σ} [DecidableEq σ] {a : Regex σs}
 def regex2NFA : Regex σs → NFA σs
   | Regex.zero => Zero.zero_nfa
   | Regex.epsilon => Empty.empty
-  | Regex.char a => Char.char a
+  | Regex.char a => Char.char_nfa a
   | Regex.plus a b => Plus.plus_nfa (regex2NFA a) (regex2NFA b)
   | Regex.append a b => Append.append_nfa (regex2NFA a) (regex2NFA b)
   | Regex.star a => Plus.plus_nfa (Star.star_nfa (regex2NFA a)) (Empty.empty)
 
 
-
-
 theorem star_to_regex (s₁ : w ∈ nfaLang (regex2NFA a) → w ∈ regexLan a)
   (s₂ : ∀ w', w'.length < w.length → w' ∈ nfaLang (regex2NFA a) → w' ∈ regexLan a)
   (h : w ∈ nfaLang (regex2NFA (Regex.star a))) : w ∈ regexLan (Regex.star a) := by
+  
   simp only [nfaLang,Set.mem_def,regex2NFA] at h
   rw [Plus.accepts_iff,Star.accepts_iff] at h
   apply Or.elim h
@@ -218,7 +217,7 @@ theorem regex_to_append (s₁: w ∈ regexLan a → w ∈ nfaLang (regex2NFA a) 
                                    use fa₂ _ lt₂ h.2.1
                                    rw [←h.2.2]
 
-theorem nfa2regex {r : Regex σs} : w ∈ nfaLang (regex2NFA r) → w ∈ regexLan r := by
+theorem nfa2regex_mem {r : Regex σs} : w ∈ nfaLang (regex2NFA r) → w ∈ regexLan r := by
   intro h
   induction r with
   | zero => simp only [regex2NFA,nfaLang,Zero.accepts_iff] at h; simp only [regexLan]; apply h
@@ -235,18 +234,18 @@ theorem nfa2regex {r : Regex σs} : w ∈ nfaLang (regex2NFA r) → w ∈ regexL
                       apply s₂ h
   | append a b s₁ s₂ => have fa₁ : ∀ w', List.length w' < List.length w → w' ∈ nfaLang (regex2NFA a) → w' ∈ regexLan a := by
                           intro w' _ w'in
-                          exact nfa2regex w'in
+                          exact nfa2regex_mem w'in
                         have fa₂ : ∀ w', List.length w' < List.length w → w' ∈ nfaLang (regex2NFA b) → w' ∈ regexLan b := by
                           intro w' _ w'in
-                          exact nfa2regex w'in
+                          exact nfa2regex_mem w'in
                         apply append_to_regex s₁ s₂ h fa₁ fa₂
   | star a s => have fa : ∀ w', List.length w' < List.length w → w' ∈ nfaLang (regex2NFA a) → w' ∈ regexLan a := by
                   intro w' _ w'in
-                  exact nfa2regex w'in
+                  exact nfa2regex_mem w'in
                 apply star_to_regex s fa h
-termination_by nfa2regex => w.length
+termination_by nfa2regex_mem => w.length
 
-theorem regex2nfa {r : Regex σs} : w ∈ regexLan r → w ∈ nfaLang (regex2NFA r) := by
+theorem regex2nfa_mem {r : Regex σs} : w ∈ regexLan r → w ∈ nfaLang (regex2NFA r) := by
   intro h
   induction r with
   | zero => simp only [regexLan] at h; simp only [regex2NFA,nfaLang,Zero.accepts_iff,Set.mem_def]; apply h
@@ -263,26 +262,25 @@ theorem regex2nfa {r : Regex σs} : w ∈ regexLan r → w ∈ nfaLang (regex2NF
                       apply s₂ h
   | append a b s₁ s₂ => have fa₁ : ∀ w', List.length w' < List.length w → w' ∈ regexLan a → w' ∈ nfaLang (regex2NFA a):= by
                           intro w' _ w'in
-                          exact regex2nfa w'in
+                          exact regex2nfa_mem w'in
                         have fa₂ : ∀ w', List.length w' < List.length w →  w' ∈ regexLan b → w' ∈ nfaLang (regex2NFA b) := by
                           intro w' _ w'in
-                          exact regex2nfa w'in
+                          exact regex2nfa_mem w'in
                         exact regex_to_append s₁ s₂ h fa₁ fa₂
   | star a s => have fa : ∀ w', List.length w' < List.length w → w' ∈ regexLan a → w' ∈ nfaLang (regex2NFA a) := by
                   intro w' _ w'in
-                  exact regex2nfa w'in
+                  exact regex2nfa_mem w'in
                 apply regex_to_star s fa h
-termination_by regex2nfa => w.length
+termination_by regex2nfa_mem => w.length
 
 theorem regex2nfa_eq_regex : nfaLang (regex2NFA a) = regexLan a := by
   rw [Set.ext_iff]
   intro x
   apply Iff.intro
-  · apply nfa2regex
-  · apply regex2nfa
+  · apply nfa2regex_mem
+  · apply regex2nfa_mem
 
 lemma mem_iff_regex2nfa : w ∈ nfaLang (regex2NFA a) ↔ w ∈ regexLan a := by
   rw [regex2nfa_eq_regex]
 
 instance decMem : Decidable (w ∈ regexLan a) := decidable_of_decidable_of_iff (mem_iff_regex2nfa)
-

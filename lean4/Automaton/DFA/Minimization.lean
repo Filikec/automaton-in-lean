@@ -469,8 +469,7 @@ theorem min_δ'_accepts_iff {w : word σs} : {a : t.qs} → (δ_star' t a w ∈ 
              exact h.2
   | cons e es s => intro a
                    simp only [δ_star']
-                   have : (state_eq_class t (t.δ a e)) = (DFA.δ (min_dfa t) (state_eq_class t a) e) := step_eq_class_eq t
-                   rw [←this]
+                   rw [←step_eq_class_eq]
                    apply s
 
 theorem min_eq {w : word σs} : dfa_accepts t w ↔ dfa_accepts (min_dfa t) w := by

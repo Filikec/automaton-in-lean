@@ -287,12 +287,12 @@ theorem accepts_or_ex_prefix_state : (q : Finset t.qs) → Finset.Nonempty (δ_s
                                     rw [Finset.mem_inter]
                                     exact ⟨xins,xin.2⟩
                    | inr h => simp only [δ_star'] at acc
+                              simp only [δ_star']
                               have := s (δ_step (star_nfa t) q e) acc
                               rw [δ_step_star_eq] at this
                               apply Or.elim this
                               · intro e'
                                 apply Or.inl
-                                simp only [δ_star']
                                 exact e'
                               · intro ex
                                 apply Exists.elim ex

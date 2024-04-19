@@ -15,10 +15,10 @@ def Q : Finset (Fin 2) := {0,1}
 def σ : Finset (Fin 2) := {0,1}
 
 def δ₁ : Q → σ → Q
-  | ⟨0,_⟩ , ⟨0,_⟩ => ⟨1, by simp⟩
-  | ⟨0,_⟩ , ⟨1,_⟩ => ⟨0, by simp⟩
-  | ⟨1,_⟩ , ⟨0,_⟩ => ⟨1, by simp⟩
-  | ⟨1,_⟩ , ⟨1,_⟩ => ⟨0, by simp⟩
+  | ⟨0,_⟩ , ⟨0,_⟩ => ⟨0, by simp⟩
+  | ⟨0,_⟩ , ⟨1,_⟩ => ⟨1, by simp⟩
+  | ⟨1,_⟩ , ⟨0,_⟩ => ⟨0, by simp⟩
+  | ⟨1,_⟩ , ⟨1,_⟩ => ⟨1, by simp⟩
 
 -- accepts all words that end with '1'
 def last_is_one : DFA σ  := {qs := Q, q₀ := ⟨0, by simp⟩ , fs := {⟨1 , by simp⟩} , δ := δ₁}
@@ -30,6 +30,17 @@ def w₃ : word Q := [ ]
 #eval dfa_accepts last_is_one w₁
 #eval dfa_accepts last_is_one w₂
 #eval dfa_accepts last_is_one w₃
+
+theorem accepts_suffix_1 (w : word σ) : w++[⟨1, by simp⟩] ∈ dfaLang last_is_one := by
+  simp only [dfaLang,Set.mem_def]
+  apply (accepts_suffix_iff last_is_one [⟨1,by simp⟩]).mpr
+  intro q r
+  simp [last_is_one,δ₁]
+  split
+  next m₁ => simp at m₁
+  next _ => rfl
+  next m₂ => simp at m₂
+  next _ => rfl
 
 def q₁ : Q := ⟨0, by simp⟩
 def q₂ : Q := ⟨1, by simp⟩

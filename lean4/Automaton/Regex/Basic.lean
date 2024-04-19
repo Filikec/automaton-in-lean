@@ -17,7 +17,7 @@ inductive Regex (f : Finset α) : Type u
 
 open Regex
 
-
+-- Instances created similarly to mathlib4/computability/regularexpressions
 instance : Inhabited (Regex α) := ⟨zero⟩
 
 instance : Add (Regex α) := ⟨plus⟩
